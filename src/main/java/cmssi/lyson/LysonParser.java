@@ -20,6 +20,8 @@ import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.event.ValuableEventWrapper;
 import cmssi.lyson.exception.LysonException;
 import cmssi.lyson.exception.LysonParsingException;
+import cmssi.lyson.handler.LysonParserHandler;
+import cmssi.lyson.handler.ValidationHandler;
 
 /**
  * Lazy JSON Parser
@@ -40,7 +42,7 @@ public class LysonParser {
 	private int pos = 0;
 	private int line = 0;
 	private int column = 0;
-	private int length = 0;
+	private int length = 0;	
 	
     private Stack<ParsingEvent> stack;
     
@@ -76,51 +78,40 @@ public class LysonParser {
     }
     
     /**
-     * Returns true if the parsed String
-     * attached to this LysonParser describes
-     * a valid JSONObject or JSONArray
-     *
+     * Parses the input string (or stream) using the 
+     * {@link LysonParserHandler} passed as parameter to handle
+     * parsing events, potential errors, and defining whether 
+     * the parsing can be carried on or not
+     * 
+     * @param handler the {@link LysonParserHandler} used for
+     * the parsing
+     */
+    public void parse(LysonParserHandler handler) {
+    	try { 
+            while (handler.handle(read()));
+        } catch (LysonParsingException e) {
+        	handler.handle(e);
+        }
+    }
+    
+    /**
+     * Returns true if the chars sequence read by this 
+     * LysonParser describes a valid JSON Object or Array
+     * 
      * @return 
      * <ul>
-     * 	<li>true if attached String describes a valid
+     * 	<li>true if the specified String describes a valid
      * 		JSON Object or Array </li>
      * 	<li>false otherwise</li>
      * </ul>
      */
-    public boolean valid(){
-        try {
-            int count = 0;
-            while (true) {
-                ParsingEvent t = parse();
-                if (t == null){
-                    break;
-                }
-                LOG.log(Level.FINE, t.toString());
-                count++;
-            }
-            return count > 0;
-
-        } catch (LysonException e) {
-        	LOG.log(Level.SEVERE, e.getMessage(), e);
-        }
-        return false;
+    public boolean valid() {
+        ValidationHandler handler = new ValidationHandler();
+        parse(handler);
+        return handler.valid();
     }
-
-    /**
-     * Returns the last event :
-     * <ul>
-     * 	 <li>JSON_OBJECT_OPENING</li>
-     *   <li>JSON_OBJECT_CLOSING</li>
-     *   <li>JSON_OBJECT_ITEM</li>
-     *   <li>JSON_ARRAY_OPENING</li>
-     *   <li>JSON_ARRAY_CLOSING</li>
-     *   <li>JSON_ARRAY_ITEM</li>
-     * </ul>
-     * while parsing of the attached char sequence
-     *
-     * @returns the last parsing event
-     */
-    public ParsingEvent parse() throws LysonException {
+    
+    private ParsingEvent read() throws LysonException {
         char c = nextChar();
         if(c == 0) {
         	return null;
@@ -493,7 +484,7 @@ public class LysonParser {
                 if(s.indexOf('.') < 0) {
                 	num = new BigInteger(s);
                 	if(((BigInteger)num).compareTo(new BigInteger(String.valueOf(Long.MAX_VALUE))) <= 0) {
-                    	Long myLong = Long.getLong(s);
+                    	Long myLong = Long.valueOf(s);
                         if (myLong.longValue() == myLong.intValue()) {
                             num = myLong.intValue();
                         } else {
