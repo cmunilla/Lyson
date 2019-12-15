@@ -123,34 +123,31 @@ public class MappingHandler implements LysonParserHandler {
 		accessibles.addAll(Arrays.asList(target.getDeclaredMethods()));
 		accessibles.stream().forEach(f -> {
 		    LysonMapping lm = f.getAnnotation(LysonMapping.class);	
-		    if(lm != null) {
-		    	String mappingName = lm.mapping();
-		    	if(mappingName.length() == 0) {
-		    		try {
-			    		mappingName = null;
-			    		switch(f.getClass().getSimpleName()) {
-		    			case "Field": 
-		    				mappingName = ((Field)f).getName();
-		    				break;
-		    			case "Method": 
-		    				//method is supposed to be a setter whose name is 
-		    				//compliant to pattern : (set)([A-Z][a-z]+) where the 
-		    				//second group is the name of the field with a first 
-		    				//uppercase letter
-		    				mappingName = fieldNameFromSetterName(((Method)f).getName());			    				
-		    			default:
-		    				break;
-			    		}
-		    		} catch(SecurityException e){
-		    			if(LOG.isLoggable(Level.SEVERE)) {
-		    				LOG.log(Level.SEVERE,e.getMessage(),e);
-		    			}
-		    		}
-		    	}
-		    	if(mappingName != null) {
-		    		mapping.put(mappingName, f);
-		    	}
+		    if(lm == null) {
+		    	return;
 		    }
+	    	String mappingName = lm.mapping();
+	    	if(mappingName.length() == 0) {
+	    		try {
+		    		mappingName = null;
+		    		if("Field".equals(f.getClass().getSimpleName())) {		    			
+	    				mappingName = ((Field)f).getName();
+		    		} else if("Method".equals(f.getClass().getSimpleName())) {		    			
+	    				//method is supposed to be a setter whose name is 
+	    				//compliant to pattern : (set)([A-Z][a-z]+) where the 
+	    				//second group is the name of the field with a first 
+	    				//uppercase letter
+	    				mappingName = fieldNameFromSetterName(((Method)f).getName());
+		    		}
+	    		} catch(SecurityException e){
+	    			if(LOG.isLoggable(Level.SEVERE)) {
+	    				LOG.log(Level.SEVERE,e.getMessage(),e);
+	    			}
+	    		}
+	    	}
+	    	if(mappingName != null) {
+	    		mapping.put(mappingName, f);
+	    	}
 		});
 	}	
 		
@@ -206,11 +203,9 @@ public class MappingHandler implements LysonParserHandler {
 		}
 		if(!stack.isEmpty()) {
 			Object coll = stack.peek();
-			switch(coll.getClass().getSimpleName()) {
-			case "ArrayList" :
-				((List)coll).add(val);	
-				break;
-			case "HashMap":
+			if(List.class.isAssignableFrom(coll.getClass())) {
+				((List)coll).add(val);
+			} else if(Map.class.isAssignableFrom(coll.getClass())){
 				((Map)coll).put(key , val);	
 			}
 		}

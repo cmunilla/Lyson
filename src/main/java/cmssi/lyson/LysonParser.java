@@ -171,66 +171,7 @@ public class LysonParser {
                 if (cc != null) {
                     return cc;
                 }
-                String key = null;
-                Object value = null;
-                switch (c) {
-                    case '\'':
-                    case '"':
-                        key = readString(c);
-                        break;
-                    default:
-                        throw new LysonParsingException("Expected String delimiter", line, column);
-                }                
-                c = nextChar();
-                if (c == ':'){
-                    moveOn();
-                }else if (c == '='){
-                    moveOn();
-                    if (currentChar() == '>'){
-                        moveOn();                    	
-                    } else {
-                        throw new LysonParsingException("Expected a ':' or '=>' after a key", line, column);
-                    }
-                } else {
-                    throw new LysonParsingException("Expected a ':' or '=>' after a key", line, column);
-                }
-                c = nextChar();
-                switch (c){
-                    case '"':
-                    case '\'':
-                        value = readString(c);
-                    default:
-                        break;
-                }
-                if (value == null){
-                    ParsingEvent co = checkOpening(c, path , key );
-                    if (co != null) {
-                        return co;
-                    }
-                    StringBuffer sb = new StringBuffer();
-                    while (c >= ' ' && ",:]}/\\\"[{;=#".indexOf(c) < 0) {
-                        sb.append(c);
-                        moveOn();
-                        c = currentChar();
-                    }
-                    String s = sb.toString().trim();
-                    if (s.equals("")){
-                        throw new LysonParsingException("Missing value", line, column);
-                    }
-                    value = readObject(s);
-                }
-                c = nextChar();
-                switch (c) {
-                    case ';':
-                    case ',':
-                        moveOn();
-                    default:
-                        break;
-                }
-                ParsingEvent ev = new LysonParsingEvent(ParsingEvent.JSON_OBJECT_ITEM
-	                ).withPath(new StringBuilder().append(path).append(path.endsWith("/")
-	                	?"":"/").append(key).toString());    
-                return new KeyValueEventWrapper(ev).withValue(value).withKey(key);                
+            	return parseInJsonObject(c, path);               
             case ParsingEvent.JSON_ARRAY_OPENING:
                 cc = checkClosing(c, path);
                 if (cc != null) {
@@ -238,51 +179,7 @@ public class LysonParser {
                 }
                 index+=1;
                 ((ArrayOpeningEvent)lastToken).withInnerIndex(index);
-                value = null;
-                switch (c) {
-                    case ';':
-                    case ',':
-                    	ev = new LysonParsingEvent(ParsingEvent.JSON_ARRAY_ITEM
-        	                ).withPath(new StringBuilder().append(path).append("["
-        	                ).append(index).append("]").toString());
-                    	return new ValuableEventWrapper(new IndexedEventWrapper(ev
-        	                	).withIndex(index));
-                    case '"':
-                    case '\'':
-                        value = readString(c);
-                    default:
-                        break;
-                }
-                if (value == null) {
-                    ParsingEvent co = checkOpening(c, path, index);
-                    if (co != null) {
-                        return co;
-                    }
-                    StringBuffer sb = new StringBuffer();
-                    while (c >= ' ' && ",:]}/\\\"[{;=#".indexOf(c) < 0) {
-                        sb.append(c);
-                        moveOn();
-                        c = currentChar();
-                    }
-                    String s = sb.toString().trim();
-                    if (s.equals("")) {
-                        throw new LysonParsingException("Missing value", line, column);
-                    }
-                    value = readObject(s);
-                }
-                c = nextChar();
-                switch (c) {
-                    case ';':
-                    case ',':
-                        moveOn();
-                    default:
-                    	break;
-                }
-                ev = new LysonParsingEvent(ParsingEvent.JSON_ARRAY_ITEM).withPath(
-                	new StringBuilder().append(path).append("[").append(index).append("]"
-                		).toString());                
-            	return new ValuableEventWrapper(new IndexedEventWrapper(ev
-	                	).withIndex(index)).withValue(value);
+                return parseInJsonArray(index, c, path);
             case ParsingEvent.JSON_OBJECT_CLOSING:
             case ParsingEvent.JSON_OBJECT_ITEM:
             case ParsingEvent.JSON_ARRAY_CLOSING:
@@ -291,6 +188,118 @@ public class LysonParser {
                 break;
         }
         return null;
+    }
+    
+    private ParsingEvent parseInJsonObject(char c, String path) {    	
+        String key = null;
+        Object value = null;
+        switch (c) {
+            case '\'':
+            case '"':
+                key = readString(c);
+                break;
+            default:
+                throw new LysonParsingException("Expected String delimiter", line, column);
+        }                
+        c = nextChar();
+        if (c == ':'){
+            moveOn();
+        }else if (c == '='){
+            moveOn();
+            if (currentChar() == '>'){
+                moveOn();                    	
+            } else {
+                throw new LysonParsingException("Expected a ':' or '=>' after a key", line, column);
+            }
+        } else {
+            throw new LysonParsingException("Expected a ':' or '=>' after a key", line, column);
+        }
+        c = nextChar();
+        switch (c){
+            case '"':
+            case '\'':
+                value = readString(c);
+            default:
+                break;
+        }
+        if (value == null){
+            ParsingEvent co = checkOpening(c, path , key );
+            if (co != null) {
+                return co;
+            }
+            StringBuffer sb = new StringBuffer();
+            while (c >= ' ' && ",:]}/\\\"[{;=#".indexOf(c) < 0) {
+                sb.append(c);
+                moveOn();
+                c = currentChar();
+            }
+            String s = sb.toString().trim();
+            if (s.equals("")){
+                throw new LysonParsingException("Missing value", line, column);
+            }
+            value = readObject(s);
+        }
+        c = nextChar();
+        switch (c) {
+            case ';':
+            case ',':
+                moveOn();
+            default:
+                break;
+        }
+        ParsingEvent ev = new LysonParsingEvent(ParsingEvent.JSON_OBJECT_ITEM
+            ).withPath(new StringBuilder().append(path).append(path.endsWith("/")
+            	?"":"/").append(key).toString());    
+        return new KeyValueEventWrapper(ev).withValue(value).withKey(key);  
+    	
+    }
+
+    private ParsingEvent parseInJsonArray(int index, char c, String path) {
+    	Object value = null;
+        switch (c) {
+            case ';':
+            case ',':
+            	ParsingEvent ev = new LysonParsingEvent(ParsingEvent.JSON_ARRAY_ITEM
+	                ).withPath(new StringBuilder().append(path).append("["
+	                ).append(index).append("]").toString());
+            	return new ValuableEventWrapper(new IndexedEventWrapper(ev
+	                	).withIndex(index));
+            case '"':
+            case '\'':
+                value = readString(c);
+            default:
+                break;
+        }
+    	if (value == null) {
+            ParsingEvent co = checkOpening(c, path, index);
+            if (co != null) {
+                return co;
+            }
+            StringBuilder sb = new StringBuilder();
+            while (c >= ' ' && ",:]}/\\\"[{;=#".indexOf(c) < 0) {
+                sb.append(c);
+                moveOn();
+                c = currentChar();
+            }
+            String s = sb.toString().trim();
+            if (s.equals("")) {
+                throw new LysonParsingException("Missing value", line, column);
+            }
+            value = readObject(s);
+        }
+        c = nextChar();
+        switch (c) {
+            case ';':
+            case ',':
+                moveOn();
+            default:
+            	break;
+        }
+        ParsingEvent ev = new LysonParsingEvent(ParsingEvent.JSON_ARRAY_ITEM).withPath(
+        	new StringBuilder().append(path).append("[").append(index).append("]"
+        		).toString());                
+    	return new ValuableEventWrapper(new IndexedEventWrapper(ev
+            	).withIndex(index)).withValue(value);
     }
     
     /**
