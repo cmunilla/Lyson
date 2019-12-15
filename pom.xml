@@ -9,7 +9,10 @@
   <description>Lazy JSON</description>
   
   <properties>
-  	<sonar.jacoco.itReportPath>${project.basedir}/../../target/jacoco-it.exec</sonar.jacoco.itReportPath>
+  	<sonar.projectKey>cmunilla_Lyson</sonar.projectKey>
+    <sonar.organization>cmunilla</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.login>5be2ff98dcda42763eb13f0c8775eec87be6eb4c</sonar.login>
   </properties>
   
   <dependencies>  		
@@ -64,41 +67,6 @@
 						</configuration>
                 	</execution>
                 </executions>
-			</plugin>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.7.4.201502262128</version>
-				<configuration>
-					<append>true</append>
-				</configuration>
-				<executions>
-					<execution>
-						<id>default-prepare-agent</id>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-						<configuration>
-							<propertyName>surefire.argLine</propertyName>
-						</configuration>
-					</execution>
-					<execution>
-						<id>default-prepare-agent-integration</id>
-						<goals>
-							<goal>prepare-agent-integration</goal>
-						</goals>
-						<configuration>
-							<destFile>${sonar.jacoco.itReportPath}</destFile>
-						</configuration>
-					</execution>
-					<execution>
-						<id>default-jacoco-site</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
