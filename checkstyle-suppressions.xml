@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+ 
+<!DOCTYPE suppressions [
+<!ELEMENT suppressions (suppress*)>
+
+<!ELEMENT suppress EMPTY>
+<!ATTLIST suppress files CDATA #REQUIRED
+          checks CDATA #REQUIRED
+          lines CDATA #IMPLIED
+          columns CDATA #IMPLIED
+>]> 
+<suppressions>
+  <suppress checks="Translation" files="module-info.java"/>
+  <suppress checks="RegexpHeader" files="module-info.java"/>
+  <suppress checks="TreeWalker" files="module-info.java"/>
+  <suppress checks="IllegalImport" files="module-info.java"/>
+  <suppress checks="RedundantImport" files="module-info.java"/>
+  <suppress checks="AvoidStartImport" files="module-info.java"/>
+  <suppress checks="AvoidNestedBlocks" files="module-info.java"/>
+  <suppress checks="UnusedImports" files="module-info.java"/>
+  <suppress checks="LeftCurly" files="module-info.java"/>
+  <suppress checks="JavadocMethod" files="module-info.java"/>
+</suppressions>

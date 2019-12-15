@@ -1,6 +1,30 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2019 Christophe Munilla
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package cmssi.lyson;
 
 import java.io.IOException;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -27,7 +51,7 @@ import cmssi.lyson.handler.ValidationHandler;
  * Lazy JSON Parser
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.1
+ * @version 0.2
  */
 public class LysonParser {
 
@@ -111,6 +135,10 @@ public class LysonParser {
         return handler.valid();
     }
     
+    /**
+     * @return
+     * @throws LysonException
+     */
     private ParsingEvent read() throws LysonException {
         char c = nextChar();
         if(c == 0) {
@@ -264,6 +292,9 @@ public class LysonParser {
         return null;
     }
     
+    /**
+     * @throws LysonException
+     */
     private void checkClosingArray() throws LysonException {
         if (this.stack.isEmpty()) {
             throw new LysonParsingException("Unexpected array closing", line, column);
@@ -274,6 +305,9 @@ public class LysonParser {
         }
     }
 
+    /**
+     * @throws LysonException
+     */
     private void checkClosingObject() throws LysonException {
         if (this.stack.isEmpty()) {
             throw new LysonParsingException("Unexpected object closing", line,  column);
@@ -284,6 +318,12 @@ public class LysonParser {
         }
     }
 
+    /**
+     * @param c
+     * @param path
+     * @return
+     * @throws LysonException
+     */
     private ParsingEvent checkClosing(char c, String path) throws LysonException {
         LysonParsingEvent cc = null;
         switch (c) {
@@ -312,6 +352,12 @@ public class LysonParser {
         return cc.withPath(path);
     }
 
+    /**
+     * @param c
+     * @param path
+     * @param key
+     * @return
+     */
     private ParsingEvent checkOpening(char c, String path, Object key) {
         ParsingEvent o = null;
         int tokenType = -1;                      
@@ -350,6 +396,10 @@ public class LysonParser {
         return o;
     }
 
+    /**
+     * @return
+     * @throws LysonException
+     */
     private char currentChar() throws LysonException {
     	if(pos >= length) {
     		length = -1;
@@ -369,6 +419,11 @@ public class LysonParser {
         return c;
     }
 
+    /* (non-Javadoc)
+     * 
+     * @return
+     * @throws LysonException
+     */
     private char nextChar() throws LysonException {
         for ( ; ; ) {
             char c = currentChar();
@@ -383,17 +438,32 @@ public class LysonParser {
         }
     }
 
+    /* (non-Javadoc)
+     * 
+     * Makes the inner buffer cursor move  
+     */
     private void moveOn(){
         pos+=1;
         column+=1;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * Reads the String between the quoted char passed as parameter
+     * 
+     * @param q the quote char 
+     * 
+     * @return the String between the specified quoted char
+     * 
+     * @throws LysonException if an error occurred while reading the string 
+     */
     private String readString(char q) throws LysonException {
         char c;
         StringBuffer sb = new StringBuffer();
         for (; ; ) {
             moveOn();
-            c = currentChar();
+            c = currentChar(); 
             switch (c) {
             	case EOF:
                 case '\n':
@@ -452,7 +522,18 @@ public class LysonParser {
             }
         }
     }
-
+    
+    /* (non-Javadoc)
+     * 
+     * Tries to identify the boolean or numeric value the String argument
+     * represents, to convert it into the appropriate type and to return
+     * the converted value
+     *  
+     * @param s the String formated object to be converted
+     * 
+     * @return the appropriate boolean, numeric or string object, according 
+     * the s string argument
+     */
     private Object readObject(String s) {
         if (s.equals("")) {
             return s;
@@ -506,9 +587,5 @@ public class LysonParser {
  			LOG.log(Level.FINEST, ex.getMessage(), ex);
  		}
         return s;
-    }
-    
-    public static void main(String[] args){
-    	new LysonParser("[8,{\"fst\": 5,\"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\",\"frth\":{\"last\":45}}]") .valid();
-    }
+    }    
 }

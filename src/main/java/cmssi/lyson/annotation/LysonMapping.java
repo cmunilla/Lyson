@@ -21,35 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.exception;
+package cmssi.lyson.annotation;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 /**
+ * 
  * @author cmunilla@cmssi.fr
  * @version 0.2
  */
-public class LysonException extends RuntimeException {
-
+@Documented
+@Retention(RUNTIME)
+@Target({ FIELD, METHOD })
+public @interface LysonMapping {	
 	/**
-	 * Generated long ID
-	 */
-	private static final long serialVersionUID = -594551979575684100L;
-
-	/**
-	 * Constructor
+	 * the target name or path in the parsed JSON chars sequence 
 	 * 
-	 * @param message the error message
+	 * @return the target name or path
 	 */
-	public LysonException(String message) {
-		super(message);
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param e the cause Exception
-	 */
-	public LysonException(Exception e) {
-		super(e);
-	}
-
+	String mapping() default "";
 }

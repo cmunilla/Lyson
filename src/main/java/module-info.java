@@ -21,35 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.exception;
-
 /**
  * @author cmunilla@cmssi.fr
  * @version 0.2
  */
-public class LysonException extends RuntimeException {
-
-	/**
-	 * Generated long ID
-	 */
-	private static final long serialVersionUID = -594551979575684100L;
-
-	/**
-	 * Constructor
-	 * 
-	 * @param message the error message
-	 */
-	public LysonException(String message) {
-		super(message);
-	}
-
-	/**
-	 * Constructor
-	 * 
-	 * @param e the cause Exception
-	 */
-	public LysonException(Exception e) {
-		super(e);
-	}
-
+module cmssi.lyson {
+	
+	requires java.logging;
+	
+	exports cmssi.lyson;
+	exports cmssi.lyson.annotation;
+	exports cmssi.lyson.event;
+	exports cmssi.lyson.exception;
+	exports cmssi.lyson.handler;
 }
