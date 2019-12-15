@@ -30,12 +30,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,7 +59,7 @@ public class MappingHandler implements LysonParserHandler {
 	private final Map<String, AccessibleObject> mapping;	
 
 	//keep intermediate data structure while parsing
-	private Stack<Object> stack = new Stack<>();
+	private Deque<Object> stack = new LinkedList<>();
 	
 	private final boolean undefined;
 	private Object mapped;

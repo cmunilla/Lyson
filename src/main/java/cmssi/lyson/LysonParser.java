@@ -31,7 +31,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Stack;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,7 +69,7 @@ public class LysonParser {
 	private int column = 0;
 	private int length = 0;	
 	
-    private Stack<ParsingEvent> stack;
+    private Deque<ParsingEvent> queue;
     
     /**
      * Constructor
@@ -98,7 +99,7 @@ public class LysonParser {
      */
     public LysonParser (Reader reader) {
         this.reader = reader;
-        this.stack = new Stack<ParsingEvent>();
+        this.queue = new LinkedList<>();
     }
     
     /**
@@ -139,19 +140,19 @@ public class LysonParser {
      * @return
      * @throws LysonException
      */
-    private ParsingEvent read() throws LysonException {
+    private ParsingEvent read() {
         char c = nextChar();
         if(c == 0) {
         	return null;
         }
-        if (this.stack.isEmpty()) {
+        if (this.queue.isEmpty()) {
             ParsingEvent co = checkOpening(c, "/", null);
             if (co != null) {
                 return co;
             }
             return null;
         }  
-        ParsingEvent lastToken = this.stack.pop();        
+        ParsingEvent lastToken = this.queue.pop();        
         String path = lastToken.getPath();
         int index = 0;
         
@@ -162,7 +163,7 @@ public class LysonParser {
         if (lastToken != null && 
         	(lastToken.getType() == ParsingEvent.JSON_ARRAY_OPENING || 
         	 lastToken.getType() == ParsingEvent.JSON_OBJECT_OPENING )) {
-            this.stack.push(lastToken);
+            this.queue.push(lastToken);
         }
         switch (lastToken.getType()) {
             case ParsingEvent.JSON_OBJECT_OPENING:
@@ -296,10 +297,10 @@ public class LysonParser {
      * @throws LysonException
      */
     private void checkClosingArray() throws LysonException {
-        if (this.stack.isEmpty()) {
+        if (this.queue.isEmpty()) {
             throw new LysonParsingException("Unexpected array closing", line, column);
         }
-        ParsingEvent previousToken = this.stack.pop();
+        ParsingEvent previousToken = this.queue.pop();
         if (previousToken.getType()!=ParsingEvent.JSON_ARRAY_OPENING) {
             throw new LysonParsingException("Unexpected array closing", line, column);
         }
@@ -309,10 +310,10 @@ public class LysonParser {
      * @throws LysonException
      */
     private void checkClosingObject() throws LysonException {
-        if (this.stack.isEmpty()) {
+        if (this.queue.isEmpty()) {
             throw new LysonParsingException("Unexpected object closing", line,  column);
         }
-        ParsingEvent previousToken = this.stack.pop();
+        ParsingEvent previousToken = this.queue.pop();
         if (previousToken.getType()!= ParsingEvent.JSON_OBJECT_OPENING) {
             throw new LysonParsingException("Unexpected object closing", line, column);
         }
@@ -391,7 +392,7 @@ public class LysonParser {
     	if(tokenType == ParsingEvent.JSON_ARRAY_OPENING) {
     		o = new ArrayOpeningEventWrapper(o).withInnerIndex(-1);
     	}
-    	this.stack.push(o);
+    	this.queue.push(o);
         moveOn();
         return o;
     }
@@ -564,8 +565,8 @@ public class LysonParser {
                 Number num;      
                 if(s.indexOf('.') < 0) {
                 	num = new BigInteger(s);
-                	if(((BigInteger)num).compareTo(new BigInteger(String.valueOf(Long.MAX_VALUE))) <= 0) {
-                    	Long myLong = Long.valueOf(s);
+                	if(((BigInteger)num).compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {                    	
+                		Long myLong = Long.valueOf(s);
                         if (myLong.longValue() == myLong.intValue()) {
                             num = myLong.intValue();
                         } else {
@@ -575,8 +576,8 @@ public class LysonParser {
                 	return num;
                 } else {
                     num = new BigDecimal(s);
-                    if((((BigDecimal)num).compareTo(new BigDecimal(Double.MAX_VALUE)) <= 0
-                    	&& ((BigDecimal)num).compareTo(new BigDecimal(Double.MIN_VALUE)) >= 0)
+                    if((((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) <= 0
+                    	&& ((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) >= 0)
                     	||  ((BigDecimal)num).intValue() == 0) {
 	                    num = Double.valueOf(s);
                     }
