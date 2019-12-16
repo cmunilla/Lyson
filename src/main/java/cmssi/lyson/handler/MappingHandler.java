@@ -130,9 +130,9 @@ public class MappingHandler implements LysonParserHandler {
 	    	if(mappingName.length() == 0) {
 	    		try {
 		    		mappingName = null;
-		    		if("Field".equals(f.getClass().getSimpleName())) {		    			
+		    		if(f instanceof Field) {		    			
 	    				mappingName = ((Field)f).getName();
-		    		} else if("Method".equals(f.getClass().getSimpleName())) {		    			
+		    		} else if(f instanceof Method) {		    			
 	    				//method is supposed to be a setter whose name is 
 	    				//compliant to pattern : (set)([A-Z][a-z]+) where the 
 	    				//second group is the name of the field with a first 
@@ -151,15 +151,13 @@ public class MappingHandler implements LysonParserHandler {
 		});
 	}	
 		
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see cmssi.lyson.handler.LysonParserHandler.handle(cmssi.lyson.event.ParsingEvent);
-	 */
 	@Override
 	public boolean handle(ParsingEvent event) {
 		if(event == null) {
 			return false;
+		}		
+		if(LOG.isLoggable(Level.FINEST)) {
+			LOG.log(Level.FINEST,event.toString());
 		}
 		Object val = null;
 		String key =  event.getPath();
@@ -226,32 +224,12 @@ public class MappingHandler implements LysonParserHandler {
     			return false;
 			}
 		}
-		switch(event.getType()) {
-			case ParsingEvent.JSON_ARRAY_OPENING:
-			case ParsingEvent.JSON_OBJECT_OPENING:
-				if(ao!=null || !stack.isEmpty()) {
-					stack.push(val);
-				}
-				break;
-			case ParsingEvent.JSON_ARRAY_ITEM:
-			case ParsingEvent.JSON_OBJECT_ITEM:
-			case ParsingEvent.JSON_OBJECT_CLOSING:
-			case ParsingEvent.JSON_ARRAY_CLOSING:
-				break;
-			default:
-				break;
-		}		
-		if(LOG.isLoggable(Level.FINEST)) {
-			LOG.log(Level.FINEST,event.toString());
+		if((ao!=null || !stack.isEmpty()) && (event.getType() == ParsingEvent.JSON_ARRAY_OPENING || event.getType() == ParsingEvent.JSON_OBJECT_OPENING)) {
+			stack.push(val);
 		}
 	    return true;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see cmssi.lyson.handler.LysonParserHandler.handle(cmssi.lyson.exception.LysonParsingException);
-	 */
 	@Override
 	public void handle(LysonParsingException parsingException) {
 		if(LOG.isLoggable(Level.SEVERE)) {
