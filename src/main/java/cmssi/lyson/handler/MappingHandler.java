@@ -203,20 +203,18 @@ public class MappingHandler implements LysonParserHandler {
 		}
 		if(!stack.isEmpty()) {
 			Object coll = stack.peek();
-			if(List.class.isAssignableFrom(coll.getClass())) {
+			if(coll instanceof List) {
 				((List)coll).add(val);
-			} else if(Map.class.isAssignableFrom(coll.getClass())){
+			} else if(coll instanceof Map){
 				((Map)coll).put(key , val);	
 			}
 		}
 		if(ao != null){
 			try {
 				ao.setAccessible(true);
-				switch(ao.getClass().getSimpleName()) {
-				case "Field" :
+				if(ao instanceof Field) {
 					((Field)ao).set(mapped , val);	
-					break;
-				case "Method":
+				}else if(ao instanceof Method) {
 					((Method)ao).invoke(mapped , val);	
 				}
 			} catch (IllegalArgumentException 
@@ -239,6 +237,7 @@ public class MappingHandler implements LysonParserHandler {
 			case ParsingEvent.JSON_OBJECT_ITEM:
 			case ParsingEvent.JSON_OBJECT_CLOSING:
 			case ParsingEvent.JSON_ARRAY_CLOSING:
+				break;
 			default:
 				break;
 		}		

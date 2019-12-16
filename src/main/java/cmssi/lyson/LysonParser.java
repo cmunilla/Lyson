@@ -158,11 +158,9 @@ public class LysonParser {
         
         if(lastToken instanceof ArrayOpeningEvent) {
         	index =  ((ArrayOpeningEvent)lastToken).getInnerIndex();
-        }
-        
-        if (lastToken != null && 
-        	(lastToken.getType() == ParsingEvent.JSON_ARRAY_OPENING || 
-        	 lastToken.getType() == ParsingEvent.JSON_OBJECT_OPENING )) {
+        }        
+        if (lastToken.getType() == ParsingEvent.JSON_ARRAY_OPENING || 
+        	 lastToken.getType() == ParsingEvent.JSON_OBJECT_OPENING ) {
             this.queue.push(lastToken);
         }
         switch (lastToken.getType()) {
@@ -190,6 +188,17 @@ public class LysonParser {
         return null;
     }
     
+    /*
+     * (non-Javadoc)
+     * 
+     * Last register event was a JSON object opening one - 
+     * Continue to parse knowing that
+     * 
+     * @param c the last read character
+     * @param path the String current path
+     * 
+     * @return the next {link ParsinEvent}
+     */
     private ParsingEvent parseInJsonObject(char c, String path) {    	
         String key = null;
         Object value = null;
@@ -255,12 +264,25 @@ public class LysonParser {
         return new KeyValueEventWrapper(ev).withValue(value).withKey(key);  
     	
     }
-
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * Last register event was a JSON array opening one - 
+     * Continue to parse knowing that
+     * 
+     * @param index the current int index in the parsed array
+     * @param c the last read character
+     * @param path the String current path
+     * 
+     * @return the next {link ParsinEvent}
+     */
     private ParsingEvent parseInJsonArray(int index, char c, String path) {
     	Object value = null;
         switch (c) {
             case ';':
             case ',':
+            	moveOn();
             	ParsingEvent ev = new LysonParsingEvent(ParsingEvent.JSON_ARRAY_ITEM
 	                ).withPath(new StringBuilder().append(path).append("["
 	                ).append(index).append("]").toString());
