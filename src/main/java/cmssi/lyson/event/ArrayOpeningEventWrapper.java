@@ -29,9 +29,8 @@ package cmssi.lyson.event;
  * @author cmunilla@cmssi.fr
  * @version 0.2
  */
-public class ArrayOpeningEventWrapper implements ArrayOpeningEvent, ParsingEvent, ParsingEventWrapper {
+public class ArrayOpeningEventWrapper extends AbstractParsingEventWrapper implements ArrayOpeningEvent {
 
-	private final ParsingEvent event;
 	private int innerIndex;
 
 	/**
@@ -40,28 +39,7 @@ public class ArrayOpeningEventWrapper implements ArrayOpeningEvent, ParsingEvent
 	 * @param event the {@link ParsingEvent} to be wrapped
 	 */
 	public ArrayOpeningEventWrapper(ParsingEvent event){
-		this.event = event;
-	}
-	
-	@Override
-	public ParsingEvent getEvent() {
-		return this.event;
-	}
-	
-	@Override
-	public int getType() {
-		return this.event.getType();
-	}
-
-	@Override
-	public String getPath() {
-		return this.event.getPath();
-	}
-
-	@Override
-	public ParsingEvent withPath(String path) {
-		this.event.withPath(path);
-		return this;
+		super(event);
 	}
 	
 	@Override
@@ -75,21 +53,4 @@ public class ArrayOpeningEventWrapper implements ArrayOpeningEvent, ParsingEvent
 		return this;
 	}
 	
-	@Override
-	public <P extends ParsingEvent> P adapt(Class<P> type){
-		if(type.isAssignableFrom(getClass())) {
-			return (P)this;
-		}
-		if(this.event != null) {
-			return this.event.adapt(type);
-		}
-		return null;
-	}
-	
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append(this.event.toString());
-		return builder.toString();
-	}
 }

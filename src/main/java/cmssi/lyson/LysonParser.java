@@ -382,6 +382,7 @@ public class LysonParser {
             case ';':
             case ',':
                 moveOn();
+                break;
             default:
                 break;
         }

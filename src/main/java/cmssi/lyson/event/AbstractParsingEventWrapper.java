@@ -23,33 +23,55 @@
  */
 package cmssi.lyson.event;
 
-public class KeyValueEventWrapper extends ValuableEventWrapper implements KeyValueEvent {
+public abstract class AbstractParsingEventWrapper implements ParsingEvent, ParsingEventWrapper {
 
-	private String key;
+	protected final ParsingEvent event;
 
 	/**
 	 * Constructor
 	 * 
 	 * @param event the {@link ParsingEvent} to be wrapped
 	 */
-	public KeyValueEventWrapper(ParsingEvent event){
-		super(event);
+	public AbstractParsingEventWrapper(ParsingEvent event){
+		this.event = event;
 	}
 	
 	@Override
-	public KeyValueEventWrapper withKey(String key) {
-		this.key = key;
-		return this;
+	public ParsingEvent getEvent() {
+		return this.event;
+	}
+	
+	@Override
+	public int getType() {
+		return this.event.getType();
 	}
 
 	@Override
-	public KeyValueEventWrapper withValue(Object value) {
-		super.withValue(value);
+	public String getPath() {
+		return this.event.getPath();
+	}
+
+	@Override
+	public ParsingEvent withPath(String path) {
+		this.event.withPath(path);
 		return this;
 	}
 	
 	@Override
-	public String getKey(){
-		return this.key;
+	public <P extends ParsingEvent> P adapt(Class<P> type){
+		if(type.isAssignableFrom(getClass())) {
+			return (P)this;
+		}
+		if(this.event != null) {
+			return this.event.adapt(type);
+		}
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append(this.event.toString());
+		return builder.toString();
 	}
 }

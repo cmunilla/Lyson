@@ -29,9 +29,8 @@ package cmssi.lyson.event;
  * @author cmunilla@cmssi.fr
  * @version 0.2
  */
-public class ValuableEventWrapper implements ValuableEvent, ParsingEvent, ParsingEventWrapper {
+public class ValuableEventWrapper  extends AbstractParsingEventWrapper implements ValuableEvent {
 
-	private final ParsingEvent event;
 	private Object value;
 
 	/**
@@ -40,30 +39,9 @@ public class ValuableEventWrapper implements ValuableEvent, ParsingEvent, Parsin
 	 * @param event the wrapped {@link ParsingEvent}
 	 */
 	public ValuableEventWrapper(ParsingEvent event){
-		this.event = event;
+		super(event);
 	}
 	
-	@Override
-	public ParsingEvent getEvent() {
-		return this.event;
-	}
-
-	@Override
-	public int getType() {
-		return this.event.getType();
-	}
-
-	@Override
-	public String getPath() {
-		return this.event.getPath();
-	}
-
-	@Override
-	public ParsingEvent withPath(String path) {
-		this.event.withPath(path);
-		return  this;
-	}
-
 	@Override
 	public Object getValue() {
 		return this.value;
@@ -74,23 +52,11 @@ public class ValuableEventWrapper implements ValuableEvent, ParsingEvent, Parsin
 		this.value = value;
 		return this;
 	}
-
-	
-	@Override
-	public <P extends ParsingEvent> P adapt(Class<P> type){
-		if(type.isAssignableFrom(getClass())) {
-			return (P)this;
-		}
-		if(this.event != null) {
-			return this.event.adapt(type);
-		}
-		return null;
-	}
 	
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(this.event.toString());
+		builder.append(super.event.toString());
 		if(this.value != null) {
 			builder.append(String.format("[%s]",this.value));
 		}
