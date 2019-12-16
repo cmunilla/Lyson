@@ -1,4 +1,4 @@
-package cmssi.lyson.test;
+package cmssi.lyson.handler;
 
 import cmssi.lyson.annotation.LysonMapping;
 

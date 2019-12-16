@@ -1,4 +1,4 @@
-package cmssi.lyson.test;
+package cmssi.lyson.handler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
