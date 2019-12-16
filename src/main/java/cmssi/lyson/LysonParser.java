@@ -219,6 +219,7 @@ public class LysonParser {
             case '"':
             case '\'':
                 value = readString(c);
+                break;
             default:
                 break;
         }
@@ -227,7 +228,7 @@ public class LysonParser {
             if (co != null) {
                 return co;
             }
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             while (c >= ' ' && ",:]}/\\\"[{;=#".indexOf(c) < 0) {
                 sb.append(c);
                 moveOn();
@@ -244,6 +245,7 @@ public class LysonParser {
             case ';':
             case ',':
                 moveOn();
+                break;
             default:
                 break;
         }
@@ -267,6 +269,7 @@ public class LysonParser {
             case '"':
             case '\'':
                 value = readString(c);
+                break;
             default:
                 break;
         }
@@ -292,6 +295,7 @@ public class LysonParser {
             case ';':
             case ',':
                 moveOn();
+                break;
             default:
             	break;
         }
@@ -470,7 +474,7 @@ public class LysonParser {
      */
     private String readString(char q) throws LysonException {
         char c;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (; ; ) {
             moveOn();
             c = currentChar(); 
