@@ -27,7 +27,27 @@ public class TestValidation {
 	public void testEmptyObjectValidJSON() {
 		assertTrue(new LysonParser("{}").valid());
 	}
+	
+	@Test
+	public void testUnopenedObjectInvalidJSON() {
+		assertFalse(new LysonParser("\"key\":\"value\"}").valid());
+	}
+	
+	@Test
+	public void testUnclosedObjectInvalidJSON() {
+		assertFalse(new LysonParser("{\"key\":\"value\"").valid());
+	}
 
+	@Test
+	public void testUnclosedArrayInvalidJSON() {
+		assertFalse(new LysonParser("[\"5\",\"6\"").valid());
+	}
+
+	@Test
+	public void testUnopenedArrayInvalidJSON() {
+		assertFalse(new LysonParser("\"5\",\"6\"]").valid());
+	}
+	
 	@Test
 	public void testValidJSONObjectArrowKeyValueSeparator() {
 		assertTrue(new LysonParser("{\"fst\"=> 5,\"snd\":12,\"last\"=>\"45\"}").valid());
@@ -46,6 +66,11 @@ public class TestValidation {
 	@Test
 	public void testInvalidJSONObjectMissingKey() {		
 		assertFalse(new LysonParser("{\"fst\": 5,:12,\"last\":45}").valid());
+	}
+	
+	@Test
+	public void testInvalidJSONObjectMissingKeySemicolon() {		
+		assertFalse(new LysonParser("{\"fst\": 5,12,\"last\":45}").valid());
 	}
 	
 	@Test

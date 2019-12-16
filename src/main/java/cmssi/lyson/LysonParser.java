@@ -143,6 +143,16 @@ public class LysonParser {
     private ParsingEvent read() {
         char c = nextChar();
         if(c == 0) {
+        	if(!this.queue.isEmpty()) {
+        		ParsingEvent lastToken = this.queue.pop();
+        		if (lastToken.getType() == ParsingEvent.JSON_ARRAY_OPENING ) {
+        			throw new LysonParsingException("Json array closing expected",
+        				line,column);
+        		} else if(lastToken.getType() == ParsingEvent.JSON_OBJECT_OPENING ) {
+        			throw new LysonParsingException("Json object closing expected",
+        				line,column);
+        	    }
+        	}
         	return null;
         }
         if (this.queue.isEmpty()) {
