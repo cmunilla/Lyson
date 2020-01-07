@@ -249,10 +249,10 @@ public class LysonParser {
     			LOG.log(Level.SEVERE,e.getMessage(),e);
     		}
         } catch (InterruptedException e) {
-        	Thread.interrupted();
     		if(LOG.isLoggable(Level.SEVERE)) {
     			LOG.log(Level.SEVERE,e.getMessage(),e);
     		}
+        	Thread.currentThread().interrupt();
 		}
     }
     
