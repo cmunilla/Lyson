@@ -245,13 +245,14 @@ public class LysonParser {
         	Arrays.stream(handlers).forEach(h -> {
     			h.handle(e);
     		});
-			if(LOG.isLoggable(Level.SEVERE)) {
-				LOG.log(Level.SEVERE,e.getMessage(),e);
-			}
+    		if(LOG.isLoggable(Level.SEVERE)) {
+    			LOG.log(Level.SEVERE,e.getMessage(),e);
+    		}
         } catch (InterruptedException e) {
-			if(LOG.isLoggable(Level.SEVERE)) {
-				LOG.log(Level.SEVERE,e.getMessage(),e);
-			}
+        	Thread.interrupted();
+    		if(LOG.isLoggable(Level.SEVERE)) {
+    			LOG.log(Level.SEVERE,e.getMessage(),e);
+    		}
 		}
     }
     

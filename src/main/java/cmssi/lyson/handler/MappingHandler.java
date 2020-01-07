@@ -205,6 +205,9 @@ public class MappingHandler<T> implements LysonParserHandler {
 			} else if(ao instanceof Method) {
 				type = ((Method)ao).getParameterTypes()[0];	
 			}
+			if(type==null) {
+				return stacked;
+			}
 			if(type.isAssignableFrom(defaultValueType)) {
 				val = defaultValue;
 				stacked = defaultValue;
