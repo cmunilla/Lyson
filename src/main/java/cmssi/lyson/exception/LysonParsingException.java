@@ -25,7 +25,7 @@ package cmssi.lyson.exception;
 
 /**
  * @author cmunilla@cmssi.fr
- * @version 0.2
+ * @version 0.3
  */
 public class LysonParsingException extends LysonException {
 

@@ -1,20 +1,26 @@
 package cmssi.lyson.handler;
 
+import java.util.Map;
+
 import cmssi.lyson.annotation.LysonMapping;
 
-public class MyOtherMapped {
+public class MyAnnotatedMapped {
 
-	@LysonMapping(mapping="key2")
 	private String key1;
 	
-	@LysonMapping(mapping="key1")
+	@LysonMapping
 	private String key2;
 			
-	@LysonMapping(mapping="/key3/array[2]")
-	private int key3;
+	@LysonMapping
+	private Map key3;
 
-	public MyOtherMapped(){}
+	public MyAnnotatedMapped(){}
 	
+	@LysonMapping
+	public void setKey1(String key1) {
+		this.key1=key1;
+	}
+
 	public String  getKey1() {
 		return this.key1;
 	}
@@ -23,7 +29,7 @@ public class MyOtherMapped {
 		return this.key2;
 	}
 	
-	public int getKey3() {
+	public Map  getKey3() {
 		return this.key3;
 	}
 }

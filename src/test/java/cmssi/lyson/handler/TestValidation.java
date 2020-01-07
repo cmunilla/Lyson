@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import org.junit.Test;
 
 import cmssi.lyson.LysonParser;
+import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.exception.LysonParsingException;
 
 public class TestValidation {
@@ -89,5 +90,53 @@ public class TestValidation {
 	@Test
 	public void testInvalidJSON() {
 		assertFalse(new LysonParser("[8,{\"fst\": 5,\"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\",{\"last\":45}}]").valid());
+	}
+
+	@Test
+	public void testInvalidJSONEOF() {
+		assertFalse(new LysonParser("{\"key1\":\"NOT PARSED\0\"}").valid());	
+	}
+
+	@Test
+	public void testNoHandlerNoParsing() {
+		//nothing happen
+		new LysonParser("{\"key1\":\"NOT PARSED\"}").parse();	
+	}
+
+	@Test
+	public void testUserDefinedHandler() {
+		/*
+		
+		
+		 */
+		
+		StringBuilder expected = new StringBuilder();
+		expected.append("[JSON_OBJECT_OPENING][/]\n");
+		expected.append("[JSON_OBJECT_ITEM][/key1][PARSED]\n");
+		expected.append("[JSON_ARRAY_OPENING ][/arr]\n");
+		expected.append("[JSON_ARRAY_ITEM][/arr/[0]][5]\n");
+		expected.append("[JSON_ARRAY_ITEM][/arr/[1]][69]\n");
+		expected.append("[JSON_ARRAY_ITEM][/arr/[2]][È]\n");
+		expected.append("[JSON_ARRAY_ITEM][/arr/[3]][l]\n");
+		expected.append("[JSON_OBJECT_OPENING][/arr/[4]]\n");
+		expected.append("[JSON_OBJECT_ITEM][/arr/[4]/embedded][8]\n");
+		expected.append("[JSON_OBJECT_CLOSING][/arr/[4]]\n");
+		expected.append("[JSON_ARRAY_CLOSING][/arr]\n");
+		expected.append("[JSON_OBJECT_CLOSING][/]\n");
+		final StringBuilder b = new StringBuilder();
+		LysonParserHandler h = new LysonParserHandler( ) {
+			@Override
+			public boolean handle(ParsingEvent event) {
+				b.append(event.toString());
+				b.append('\n');
+				return true;
+			}
+			@Override
+			public void handle(LysonParsingException exception) {
+			}			
+		};		
+		new LysonParser("{\"key1\":\"PARSED\",\"arr\":[5,0x45,\u00C8,\"l\",{\"embedded\":8}]}").parse(h);	
+		System.out.println(b.toString());
+		assertEquals(expected.toString(), b.toString());
 	}
 }

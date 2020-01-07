@@ -28,7 +28,7 @@ package cmssi.lyson.event;
  * key mapped to an Object value
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.2
+ * @version 0.3
  */
 public interface KeyValueEvent extends ValuableEvent {
 	

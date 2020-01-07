@@ -32,7 +32,7 @@ import cmssi.lyson.exception.LysonParsingException;
  * {@link cmssi.lyson.LysonParser}
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.2
+ * @version 0.3
  */
 public interface LysonParserHandler {
 	

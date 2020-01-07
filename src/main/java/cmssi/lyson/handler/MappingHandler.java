@@ -28,19 +28,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import cmssi.lyson.annotation.LysonMapping;
 import cmssi.lyson.event.KeyValueEventWrapper;
 import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.event.ValuableEventWrapper;
@@ -50,40 +45,26 @@ import cmssi.lyson.exception.LysonParsingException;
  * {@link LysonParserHandler} implementation dedicated to a JSON chars sequence mapping
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.2
+ * @version 0.3
  */
-public class MappingHandler implements LysonParserHandler {
+public class MappingHandler<T> implements LysonParserHandler {
 
 	private static final Logger LOG = Logger.getLogger(MappingHandler.class.getName());
-	
-	private final Map<String, AccessibleObject> mapping;	
 
 	//keep intermediate data structure while parsing
 	private Deque<Object> stack = new LinkedList<>();
+	private MappingWrapper<T> wrapper;
 	
-	private final boolean undefined;
-	private Object mapped;
-
+	
 	/**
 	 * Constructor
 	 * 
 	 * @param mappedType the java type to map the parsed JSON chars sequence to
 	 */
-	public MappingHandler(Class<?> mappedType){
-		try {
-			mapped = mappedType.getConstructor().newInstance();		
-		} catch(ReflectiveOperationException e) {
-			if(LOG.isLoggable(Level.SEVERE)) {
-				LOG.log(Level.SEVERE, e.getMessage(), e);
-			}
-		}
-		if(mapped == null) {
-			throw new NullPointerException("Unable to create a new instance of the mapped type");
-		}	
-		undefined = false;
-		this.mapping = Collections.synchronizedMap(new HashMap<>());
-		buildMapping(mappedType);	
+	public MappingHandler(Class<T> mappedType){
+		this.wrapper = new MappingWrapper<T>(mappedType);
 	}
+	
 	
 	/**
 	 * Constructor
@@ -91,14 +72,8 @@ public class MappingHandler implements LysonParserHandler {
 	 * @param mapped the instance to which assign the fields of with the parsed 
 	 * JSON chars sequence
 	 */
-	public MappingHandler(Object mapped){				
-		if(mapped == null) {
-			throw new NullPointerException("Null mapped argument");
-		}
-		this.mapped = mapped;	
-		this.mapping = Collections.synchronizedMap(new HashMap<>());
-		undefined = false;
-		buildMapping(mapped.getClass());
+	public MappingHandler(T mapped){
+		this.wrapper = new MappingWrapper<T>(mapped);
 	}
 	
 	/**
@@ -107,49 +82,9 @@ public class MappingHandler implements LysonParserHandler {
 	//If no mapped type or instance is provided the JSON chars sequence will be 
 	//converted into Map or a List
 	public MappingHandler(){
-		//the mapping result will be the single element of the mapped List
-		this.mapped = new ArrayList<Object>();
-		undefined = true;
-		this.mapping = Collections.synchronizedMap(new HashMap<>());
-		this.stack.add(mapped);
+		this.wrapper = new MappingWrapper<T>();
+		this.stack.add(this.wrapper.mapped());
 	}
-	
-	//build the Map whose key field is the name or the path of the targeted 
-	//LysonParsingEvent and whose value field is the primitive or the JSON 
-	//data structure attached to this last one
-	private void buildMapping(Class<?> target) {		
-		Set<AccessibleObject> accessibles = new HashSet<>();
-		accessibles.addAll(Arrays.asList(target.getDeclaredFields()));
-		accessibles.addAll(Arrays.asList(target.getDeclaredMethods()));
-		accessibles.stream().forEach(f -> {
-		    LysonMapping lm = f.getAnnotation(LysonMapping.class);	
-		    if(lm == null) {
-		    	return;
-		    }
-	    	String mappingName = lm.mapping();
-	    	if(mappingName.length() == 0) {
-	    		try {
-		    		mappingName = null;
-		    		if(f instanceof Field) {		    			
-	    				mappingName = ((Field)f).getName();
-		    		} else if(f instanceof Method) {		    			
-	    				//method is supposed to be a setter whose name is 
-	    				//compliant to pattern : (set)([A-Z][a-z]+) where the 
-	    				//second group is the name of the field with a first 
-	    				//uppercase letter
-	    				mappingName = fieldNameFromSetterName(((Method)f).getName());
-		    		}
-	    		} catch(SecurityException e){
-	    			if(LOG.isLoggable(Level.SEVERE)) {
-	    				LOG.log(Level.SEVERE,e.getMessage(),e);
-	    			}
-	    		}
-	    	}
-	    	if(mappingName != null) {
-	    		mapping.put(mappingName, f);
-	    	}
-		});
-	}	
 		
 	@Override
 	public boolean handle(ParsingEvent event) {
@@ -160,35 +95,45 @@ public class MappingHandler implements LysonParserHandler {
 			LOG.log(Level.FINEST,event.toString());
 		}
 		Object val = null;
-		String key =  event.getPath();
-		AccessibleObject ao = mapping.get(key);
+		MappingConfiguration<T> config = this.wrapper.getMappingConfiguration();
+		String key =  config.getPrefix().getSuffix(event.getPath());		
+				
+		AccessibleObject ao = config.getMapping(key);
 		
 		if(ao == null) {
-			KeyValueEventWrapper wrapper = event.adapt(KeyValueEventWrapper.class);
-			if(wrapper!=null) {
-				key = wrapper.getKey();
-				ao = mapping.get(key);
+			KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
+			if(kvwrapper!=null) {
+				key = config.getPrefix().getSuffix(kvwrapper.getKey());
+				ao = config.getMapping(key);
 			}
 		}
 		switch(event.getType()) {
 			case ParsingEvent.JSON_ARRAY_OPENING:
-				val = new ArrayList<Object>();
+				if(config.getPrefix().isPrefix(event.getPath())) {
+					this.wrapper.newMappedInstance();
+				}
+				val = handleJsonOpening(ao,ArrayList.class);
 				break;
 			case ParsingEvent.JSON_OBJECT_OPENING:
-				val = new HashMap<String,Object>();
+				if(config.getPrefix().isPrefix(event.getPath())) {
+					this.wrapper.newMappedInstance();					
+				}
+				val = handleJsonOpening(ao,HashMap.class);
 				break;
 			case ParsingEvent.JSON_ARRAY_ITEM:
 				ValuableEventWrapper vwrapper = event.adapt(ValuableEventWrapper.class);
 				if(vwrapper!=null) {
 					val = vwrapper.getValue();
 				}
+				assignValue(ao,val);
 				break;
 			case ParsingEvent.JSON_OBJECT_ITEM:
 				KeyValueEventWrapper kvw = event.adapt(KeyValueEventWrapper.class);
 				if(kvw!=null) {
 					key = kvw.getKey();
 					val = kvw.getValue();
-				}
+				}		
+				assignValue(ao,val);
 				break;
 			case ParsingEvent.JSON_OBJECT_CLOSING:
 			case ParsingEvent.JSON_ARRAY_CLOSING:
@@ -200,31 +145,18 @@ public class MappingHandler implements LysonParserHandler {
 				break;
 		}
 		if(!stack.isEmpty()) {
-			Object coll = stack.peek();
-			if(coll instanceof List) {
-				((List)coll).add(val);
-			} else if(coll instanceof Map){
-				((Map)coll).put(key , val);	
+			Object obj = stack.peek();
+			if(obj instanceof List) {
+				((List)obj).add(val);
+			} else if(obj instanceof Map){
+				((Map)obj).put(key , val);	
+			} else if(obj instanceof MappingHandler) {				
+				((MappingHandler)obj).handle(event);
+				return true;
 			}
 		}
-		if(ao != null){
-			try {
-				ao.setAccessible(true);
-				if(ao instanceof Field) {
-					((Field)ao).set(mapped , val);	
-				}else if(ao instanceof Method) {
-					((Method)ao).invoke(mapped , val);	
-				}
-			} catch (IllegalArgumentException 
-				   | IllegalAccessException 
-				   | InvocationTargetException e) {
-    			if(LOG.isLoggable(Level.SEVERE)) {
-    				LOG.log(Level.SEVERE,e.getMessage(),e);
-    			}
-    			return false;
-			}
-		}
-		if((ao!=null || !stack.isEmpty()) && (event.getType() == ParsingEvent.JSON_ARRAY_OPENING || event.getType() == ParsingEvent.JSON_OBJECT_OPENING)) {
+		if((ao!=null || !stack.isEmpty()) 
+		&& (event.getType()==ParsingEvent.JSON_ARRAY_OPENING ||event.getType()==ParsingEvent.JSON_OBJECT_OPENING)) {
 			stack.push(val);
 		}
 	    return true;
@@ -238,25 +170,81 @@ public class MappingHandler implements LysonParserHandler {
 	}
 	
 	/**
-	 * Returns the &lt;T&gt; typed mapped instance
+	 * Returns the &lt;K&gt; typed mapped instance
 	 * 
-	 * @param <T> the expected 
-	 * 
-	 * @return the &lt;T&gt; typed mapped instance
+	 * @param <K> the mapping object result type
+	 *  
+	 * @return the &lt;K&gt; typed mapped instance
 	 */
-	public <T> T getMapped() {
-		if(undefined){
-			return (T) ((List)mapped).get(0);
-		}
-		return (T) this.mapped;
+	@SuppressWarnings("unchecked")
+	public <K> K getMapped() {
+		return (K) this.wrapper.get();
 	}
 	
-	//retrieve the targeted field name from the setter method name
-	private static String fieldNameFromSetterName(String methodName) {
-		String fieldName = methodName;
-		//just translate uppercase letter to lowercase by adding 32
-		char c = (char)(((int)(fieldName.charAt(3)) + 32));
-		fieldName = new StringBuilder().append(c).append(fieldName.substring(4)).toString();
-		return fieldName;
+	//According to the type of the JSON data structure opening event, and the type 
+	//of the Field of the mapped Object targeted by the ao AccessibleObject argument
+	//the assigned value is a Map, a List or the mapped Object of a sub MappingHandler
+	private Object handleJsonOpening(AccessibleObject ao, Class<?> defaultValueType) {
+		Object val = null;
+		Object stacked = null;
+		Object defaultValue = null;
+		try {
+			defaultValue = defaultValueType.getConstructor().newInstance();	
+		} catch(ReflectiveOperationException e) {
+			if(LOG.isLoggable(Level.SEVERE)) {
+				LOG.log(Level.SEVERE, e.getMessage(), e);
+			}
+		}		
+		if(ao == null) {
+			val = defaultValue;
+			stacked = defaultValue;
+		} else {
+			Class<?> type = null;
+			if(ao instanceof Field) {
+				type = ((Field)ao).getType();	
+			} else if(ao instanceof Method) {
+				type = ((Method)ao).getParameterTypes()[0];	
+			}
+			if(type.isAssignableFrom(defaultValueType)) {
+				val = defaultValue;
+				stacked = defaultValue;
+			} else {
+				try {
+					MappingHandler sub = new MappingHandler(type);
+					val = sub.getMapped();	
+					stacked = sub;
+				} catch(NullPointerException e) {
+					if(LOG.isLoggable(Level.SEVERE)){
+						LOG.log(Level.SEVERE,e.getMessage(),e);
+					}
+				}
+			}
+		}
+		assignValue(ao,val);
+		return stacked;
+	}
+	
+	//Define the val value Object of the appropriate field of 
+	//the mapped object using the ao AccessibleObject argument  
+	//by setting it if it's a Field or invoking it if it's a
+	//Method
+	private void assignValue(AccessibleObject ao, Object val) {
+		if(ao == null) {
+			return;
+		}			
+		try {
+			ao.setAccessible(true);
+			if(ao instanceof Field) {
+				((Field)ao).set(this.wrapper.mapped() , val);	
+			}else if(ao instanceof Method) {
+				((Method)ao).invoke(this.wrapper.mapped() , val);	
+			}
+		} catch (IllegalArgumentException 
+			   | IllegalAccessException 
+			   | InvocationTargetException e) {
+			if(LOG.isLoggable(Level.SEVERE)) {
+				LOG.log(Level.SEVERE,e.getMessage(),e);
+			}
+		}
 	}
 }

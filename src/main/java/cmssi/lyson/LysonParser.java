@@ -24,15 +24,27 @@
 package cmssi.lyson;
 
 import java.io.IOException;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,15 +64,99 @@ import cmssi.lyson.handler.ValidationHandler;
  * Lazy JSON Parser
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.2
+ * @version 0.3
  */
 public class LysonParser {
 
 	private static final Logger LOG = Logger.getLogger(LysonParser.class.getName());
 	
-	private static final int BUFFER_SIZE = 1024*60;
-	private static final char EOF  = '\0';
+	private class LysonParserHandlerThreadExecutor extends ThreadPoolExecutor {
+
+		/**
+		 * Constructor
+		 * 
+		 * @param poolSize the thread pool size of the {@link ThreadPoolExecutor}
+		 * to be instantiated
+		 */
+		LysonParserHandlerThreadExecutor(int poolSize) {
+			super(poolSize, poolSize,0L, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>());
+		}
+		
+		/**
+		 * Executes the given tasks parameterized with the specified {@link ParsingEvent}, 
+		 * returning a list of Futures holding their status and results when all complete. 
+		 * Future.isDone is true for each element of the returned list. Note that a completed 
+		 * task could have terminated either normally or by throwing an exception. The results 
+		 * of this method are undefined if the given collection is modified while this operation is in progress.
+		 *
+		 * @param tasks the collection of tasks
+		 * @param event the {@link ParsingEvent} parameterizing the tasks
+		 * 
+		 * @return a list of Futures representing the tasks, in the same sequential order as 
+		 * produced by the iterator for the given task list, each of which has completed
+		 * 
+		 * @throws InterruptedException - if interrupted while waiting, in which case unfinished 
+		 * tasks are cancelled
+		 */
+		List<Future<Boolean>> invokeAll(Collection<LysonParserHandlerCallable> tasks, ParsingEvent event)
+	    throws InterruptedException {
+	        if (tasks == null)
+	            throw new NullPointerException();
+	        ArrayList<Future<Boolean>> futures = new ArrayList<>(tasks.size());
+	        try {
+	            for (LysonParserHandlerCallable t : tasks) {
+	            	t.setParsingEvent(event);
+	                RunnableFuture<Boolean> f = newTaskFor(t);
+	                futures.add(f);
+	                execute(f);
+	            }
+	            for (int i = 0, size = futures.size(); i < size; i++) {
+	                Future<Boolean> f = futures.get(i);
+	                if (!f.isDone()) {
+	                    try { 
+	                    	f.get(); 
+	                    }
+	                    catch (CancellationException | ExecutionException ignore) {}
+	                }
+	            }
+	            return futures;
+	        } catch (Throwable t) {  
+	        	for (int size = futures.size(),j=0; j < size; j++) {
+	        		futures.get(j).cancel(true);
+	        	}
+	            throw t;
+	        }
+	    }
+	}
 	
+	private final class LysonParserHandlerCallable implements Callable<Boolean> {
+		
+		private ParsingEvent parsingEvent;
+		private LysonParserHandler handler;
+
+		LysonParserHandlerCallable(LysonParserHandler handler){
+			this.handler = handler;
+		}
+		
+		void setParsingEvent(ParsingEvent parsingEvent) {
+			this.parsingEvent = parsingEvent;
+		}
+		
+		@Override
+		public Boolean call() throws Exception {
+			if(this.parsingEvent == null) {
+				return false;
+			}
+			return this.handler.handle(this.parsingEvent);
+		}
+	};
+	
+	
+	private static final int MAX_THREAD = 100;
+	private static final int BUFFER_SIZE = 1024*60;
+	
+	private static final char EOF  = '\0';
+
     private Reader reader;
     
 	private char[] buffer = new char[BUFFER_SIZE];
@@ -103,20 +199,60 @@ public class LysonParser {
     }
     
     /**
-     * Parses the input string (or stream) using the 
-     * {@link LysonParserHandler} passed as parameter to handle
-     * parsing events, potential errors, and defining whether 
+     * Parses the input string (or stream) and propagates parsing 
+     * events, including potential error ones to the set of {@link 
+     * LysonParserHandler}s passed as parameter, and defining whether 
      * the parsing can be carried on or not
      * 
-     * @param handler the {@link LysonParserHandler} used for
-     * the parsing
+     * @param handlers the {@link LysonParserHandler}s used for the 
+     * parsing
      */
-    public void parse(LysonParserHandler handler) {
+    public void parse(LysonParserHandler... handlers) {
     	try { 
-            while (handler.handle(read()));
-        } catch (LysonParsingException e) {
-        	handler.handle(e);
-        }
+    		int length = handlers==null?0:handlers.length;
+    		if(length == 0) {
+    			return; 
+    		}
+    		if(length > MAX_THREAD) {
+    			length = MAX_THREAD;
+    		}
+	    	var callables = new LinkedList<LysonParserHandlerCallable>();
+    		Arrays.stream(handlers).forEach(h -> {
+    			callables.add(new LysonParserHandlerCallable(h));
+    		});
+    		LysonParserHandlerThreadExecutor executor = new LysonParserHandlerThreadExecutor(length);
+    		while(true) {
+	            List<Future<Boolean>> futures = executor.invokeAll(callables, read());
+	            int offset = 0;
+	            for(int pos = 0; pos < futures.size(); pos++) {
+	            	try {
+						if(futures.get(pos).get(1,TimeUnit.SECONDS).booleanValue()) {
+							continue;
+						}
+					} catch (ExecutionException | TimeoutException e) {
+						if(LOG.isLoggable(Level.SEVERE)) {
+							LOG.log(Level.SEVERE,e.getMessage(),e);
+						}
+					}
+					callables.remove(pos-offset);
+					offset+=1;
+	            }
+	            if(callables.isEmpty()) {
+	            	break;
+	            }
+    		}
+        } catch (LysonParsingException e) {        	
+        	Arrays.stream(handlers).forEach(h -> {
+    			h.handle(e);
+    		});
+			if(LOG.isLoggable(Level.SEVERE)) {
+				LOG.log(Level.SEVERE,e.getMessage(),e);
+			}
+        } catch (InterruptedException e) {
+			if(LOG.isLoggable(Level.SEVERE)) {
+				LOG.log(Level.SEVERE,e.getMessage(),e);
+			}
+		}
     }
     
     /**
@@ -294,8 +430,8 @@ public class LysonParser {
             case ',':
             	moveOn();
             	ParsingEvent ev = new LysonParsingEvent(ParsingEvent.JSON_ARRAY_ITEM
-	                ).withPath(new StringBuilder().append(path).append("["
-	                ).append(index).append("]").toString());
+	                ).withPath(new StringBuilder().append(path).append(path.endsWith("/")
+	                    ?"":"/").append("[").append(index).append("]").toString());
             	return new ValuableEventWrapper(new IndexedEventWrapper(ev
 	                	).withIndex(index));
             case '"':
@@ -332,8 +468,8 @@ public class LysonParser {
             	break;
         }
         ParsingEvent ev = new LysonParsingEvent(ParsingEvent.JSON_ARRAY_ITEM).withPath(
-        	new StringBuilder().append(path).append("[").append(index).append("]"
-        		).toString());                
+        	new StringBuilder().append(path).append(path.endsWith("/")?"":"/").append("["
+        		).append(index).append("]").toString());                
     	return new ValuableEventWrapper(new IndexedEventWrapper(ev
             	).withIndex(index)).withValue(value);
     }
@@ -341,7 +477,7 @@ public class LysonParser {
     /**
      * @throws LysonException
      */
-    private void checkClosingArray() throws LysonException {
+    private void checkClosingArray() {
         if (this.queue.isEmpty()) {
             throw new LysonParsingException("Unexpected array closing", line, column);
         }
@@ -354,7 +490,7 @@ public class LysonParser {
     /**
      * @throws LysonException
      */
-    private void checkClosingObject() throws LysonException {
+    private void checkClosingObject() {
         if (this.queue.isEmpty()) {
             throw new LysonParsingException("Unexpected object closing", line,  column);
         }
@@ -370,7 +506,7 @@ public class LysonParser {
      * @return
      * @throws LysonException
      */
-    private ParsingEvent checkClosing(char c, String path) throws LysonException {
+    private ParsingEvent checkClosing(char c, String path) {
         LysonParsingEvent cc = null;
         switch (c) {
             case 0:
@@ -422,8 +558,8 @@ public class LysonParser {
 	    	if(Number.class.isAssignableFrom(key.getClass())){
 	    		ParsingEvent ev = new LysonParsingEvent(tokenType
 	                ).withPath(new StringBuilder().append(path
-	                ).append("[").append((Number)key).append("]"
-	                		).toString());
+	                ).append(path.endsWith("/")?"":"/").append("["
+	                ).append((Number)key).append("]").toString());
 	    		o = new IndexedEventWrapper(ev).withIndex(((Number)key).intValue());
 	    	} else {	    		
 	    		ParsingEvent ev = new LysonParsingEvent(tokenType
@@ -447,7 +583,7 @@ public class LysonParser {
      * @return
      * @throws LysonException
      */
-    private char currentChar() throws LysonException {
+    private char currentChar() {
     	if(pos >= length) {
     		length = -1;
             try {
@@ -471,7 +607,11 @@ public class LysonParser {
      * @return
      * @throws LysonException
      */
-    private char nextChar() throws LysonException {
+    /* (non-Javadoc)
+     * 
+     * Makes the inner buffer cursor move  
+     */
+    private char nextChar() {
         for ( ; ; ) {
             char c = currentChar();
             if (c == 0 || c > ' ') {
@@ -581,10 +721,7 @@ public class LysonParser {
      * @return the appropriate boolean, numeric or string object, according 
      * the s string argument
      */
-    private Object readObject(String s) {
-        if (s.equals("")) {
-            return s;
-        }
+    private Object readObject(String s) {    	
         if (s.equalsIgnoreCase("true")) {
             return Boolean.TRUE;
         }
@@ -596,30 +733,30 @@ public class LysonParser {
         }
         try {  	
      		char b = s.charAt(0);                
-     		if ((b >= '0' && b <= '9') || b == '.' || b == '-' || b == '+') {
-                if (b == '0') {
-                	try {
-                        if (s.length() > 2 && (s.charAt(1) == 'x' || s.charAt(1) == 'X')) {                            
-                                return Integer.parseInt(s.substring(2), 16);
-                        } else {
-                                return Integer.parseInt(s, 8);
-                        }
-                	} catch(Exception ex ){
-             			LOG.log(Level.FINEST, ex.getMessage(), ex);
-             		}
-                }
-                Number num;      
+     		if ((b >= '0' && b <= '9') || b == '.' || b == '-' || b == '+') {                
+                Number num = null;      
                 if(s.indexOf('.') < 0) {
-                	num = new BigInteger(s);
-                	if(((BigInteger)num).compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {                    	
-                		Long myLong = Long.valueOf(s);
-                        if (myLong.longValue() == myLong.intValue()) {
-                            num = myLong.intValue();
-                        } else {
-                            num = myLong;
-                        }
-                	}
-                	return num;
+                	if (b == '0') {
+                    	try {
+                            if (s.length() > 2 && (s.charAt(1) == 'x' || s.charAt(1) == 'X')) {                            
+                                    num = Integer.parseInt(s.substring(2), 16);
+                            } else {
+                                    num = Integer.parseInt(s, 8);
+                            }
+                    	} catch(Exception ex ){
+                 			LOG.log(Level.FINEST, ex.getMessage(), ex);
+                 		}
+                    } else {
+	                	num = new BigInteger(s);
+	                	if(((BigInteger)num).compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {                    	
+	                		Long myLong = Long.valueOf(s);
+	                        if (myLong.longValue() == myLong.intValue()) {
+	                            num = myLong.intValue();
+	                        } else {
+	                            num = myLong;
+	                        }
+	                	}
+                    }
                 } else {
                     num = new BigDecimal(s);
                     if((((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) <= 0
@@ -627,8 +764,8 @@ public class LysonParser {
                     	||  ((BigDecimal)num).intValue() == 0) {
 	                    num = Double.valueOf(s);
                     }
-                    return num;
                 }
+                return num;
             }
  		} catch(Exception ex) {
  			LOG.log(Level.FINEST, ex.getMessage(), ex);

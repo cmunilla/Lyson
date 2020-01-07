@@ -33,6 +33,9 @@ public abstract class AbstractParsingEventWrapper implements ParsingEvent, Parsi
 	 * @param event the {@link ParsingEvent} to be wrapped
 	 */
 	public AbstractParsingEventWrapper(ParsingEvent event){
+		if(event == null) {
+			throw new NullPointerException("Null ParsingEvent");
+		}
 		this.event = event;
 	}
 	
@@ -62,10 +65,7 @@ public abstract class AbstractParsingEventWrapper implements ParsingEvent, Parsi
 		if(type.isAssignableFrom(getClass())) {
 			return (P)this;
 		}
-		if(this.event != null) {
-			return this.event.adapt(type);
-		}
-		return null;
+		return this.event.adapt(type);
 	}
 	
 	@Override

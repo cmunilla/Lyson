@@ -28,7 +28,7 @@ package cmssi.lyson.event;
  * JSON parsing event implementation
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.2
+ * @version 0.3
  */
 public class LysonParsingEvent implements ParsingEvent {
 	
@@ -90,6 +90,7 @@ public class LysonParsingEvent implements ParsingEvent {
 	    		break;
 	    	case ParsingEvent.JSON_ARRAY_ITEM :
 	    		builder.append("[JSON_ARRAY_ITEM]");
+	    		break;
 	    	default :
 	    		break;
     	} 
