@@ -386,23 +386,25 @@ public class MappingHandler<T> implements LysonParserHandler {
 	}
 
 	private Object castToNumber(Class<?> clazz, Number number) {
-		switch(clazz.getSimpleName()) {
-			case "Byte" :
-				return Byte.valueOf(number.byteValue());
-			case "Short" :
-				return Short.valueOf(number.shortValue());
-			case "Integer":
-				return Integer.valueOf(number.intValue());
-			case "Long":
-				return Long.valueOf(number.longValue());
-			case "BigInteger":
-				return BigInteger.valueOf(number.longValue());
-			case "Float":
-				return Float.valueOf(number.floatValue());
-			case "Double":	
-				return Double.valueOf(number.doubleValue());
-			case "BigDecimal":	
-				return BigDecimal.valueOf(number.doubleValue());
+		if(number!=null) {
+			switch(clazz.getSimpleName()) {
+				case "Byte" :
+					return Byte.valueOf(number.byteValue());
+				case "Short" :
+					return Short.valueOf(number.shortValue());
+				case "Integer":
+					return Integer.valueOf(number.intValue());
+				case "Long":
+					return Long.valueOf(number.longValue());
+				case "BigInteger":
+					return BigInteger.valueOf(number.longValue());
+				case "Float":
+					return Float.valueOf(number.floatValue());
+				case "Double":	
+					return Double.valueOf(number.doubleValue());
+				case "BigDecimal":	
+					return BigDecimal.valueOf(number.doubleValue());
+			}
 		}
 		return null;
 	}
