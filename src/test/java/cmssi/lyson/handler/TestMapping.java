@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -24,10 +26,11 @@ public class TestMapping {
 		Logger.getLogger(MappingHandler.class.getName()).setLevel(Level.FINEST);
 		MappingHandler<MyAnnotatedMapped> mapping = new MappingHandler<>(MyAnnotatedMapped.class);
 		new LysonParser("{"
+		+ "\"key0\":[\"fst\", 0.55, \"array\",[8,2,1,{\"thd\" => \"more\"}], true, 1.225544, 1000789446512301, 44.2222222222222222228,5,1024,65535,45654654654654],"
 		+ "\"key1\":\"IT IS KEY ONE\\b\","
 		+ "\"key2\": \"3\","
-		+ "\"key3\":{\"fst\": 0.55, \"array\":[8,2,1,{\"thd\" => \"more\"}],"
-		+ "\"key4\": \"\u00C8\",\"snd\":\"another\"},"
+		+ "\"key3\":{\"fst\": 0.55, \"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\"},"
+		+ "\"key4\": \"\u00C8\","
 		+ "\"key5\": 128,"
 		+ "\"key6\": 485668897.8779,"
 		+ "\"key7\": \"true\","
@@ -54,6 +57,19 @@ public class TestMapping {
 		).parse(mapping);		
 		MyAnnotatedMapped m = mapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(m.getKey3().getClass()));
+		assertEquals("fst", m.getKey0().getKey1());
+		assertEquals(0.55f, m.getKey0().getKey2(),0);
+		assertEquals("array", m.getKey0().getKey3());
+		assertTrue(List.class.isAssignableFrom(m.getKey0().getKey4().getClass()));
+		assertEquals(4,((List)m.getKey0().getKey4()).size());
+		assertEquals('1', m.getKey0().getKey5());
+		assertEquals(Double.valueOf(1.225544d), m.getKey0().getKey6(),0);
+		assertEquals(BigInteger.valueOf(Long.valueOf("1000789446512301")), m.getKey0().getKey7());
+		assertEquals(BigDecimal.valueOf(Double.valueOf("44.2222222222222222228")), m.getKey0().getKey8());
+		assertEquals(Byte.valueOf("5"), m.getKey0().getKey9());
+		assertEquals(Short.valueOf("1024"), m.getKey0().getKey10());
+		assertEquals(Integer.valueOf("65535"), m.getKey0().getKey11());
+		assertEquals(Long.valueOf("45654654654654"), m.getKey0().getKey12());
 		assertTrue(List.class.isAssignableFrom(m.getKey3().get("array").getClass()));
 		assertEquals("IT IS KEY ONE\b",m.getKey1());
 		assertEquals("3",m.getKey2());

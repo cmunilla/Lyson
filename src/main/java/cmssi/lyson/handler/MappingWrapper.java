@@ -138,7 +138,8 @@ public class MappingWrapper<T> {
 			}
 		}
 		if(mapped == null) {
-			throw new NullPointerException("Unable to create a new instance of the mapped type");
+			throw new NullPointerException(String.format(
+			"Unable to create a new instance of the mapped type :%s",mappedType.getName()));
 		}
 		mappeds.addFirst(mapped);
 	}

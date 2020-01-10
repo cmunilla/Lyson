@@ -6,6 +6,9 @@ import cmssi.lyson.annotation.LysonMapping;
 
 public class MyAnnotatedMapped {
 
+	@LysonMapping
+	private MySubAnnotatedMapped key0;
+	
 	private String key1;
 	
 	@LysonMapping
@@ -91,6 +94,10 @@ public class MyAnnotatedMapped {
 	@LysonMapping
 	public void setKey1(String key1) {
 		this.key1=key1;
+	}
+	
+	public MySubAnnotatedMapped getKey0(){
+		return this.key0;
 	}
 
 	public String  getKey1() {

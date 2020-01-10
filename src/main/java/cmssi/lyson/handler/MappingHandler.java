@@ -27,6 +27,8 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
@@ -78,6 +80,16 @@ public class MappingHandler<T> implements LysonParserHandler {
 	}
 	
 	/**
+	 * Returns true if the Stack of intermediate data structures kept
+	 * while parsing is not empty - Otherwise returns false
+	 * 
+	 * @return true if waiting for an intermediate data structure closing
+	 */
+	public boolean waitClosing() {
+		return !stack.isEmpty();
+	}
+
+	/**
 	 * Constructor
 	 */
 	//If no mapped type or instance is provided the JSON chars sequence will be 
@@ -108,18 +120,22 @@ public class MappingHandler<T> implements LysonParserHandler {
 				ao = config.getMapping(key);
 			}
 		}
+		boolean opening = false;
+		boolean closing = false;
 		switch(event.getType()) {
 			case ParsingEvent.JSON_ARRAY_OPENING:
 				if(config.getPrefix().isPrefix(event.getPath())) {
 					this.wrapper.newMappedInstance();
 				}
 				val = handleJsonOpening(ao,ArrayList.class);
+				opening = true;
 				break;
 			case ParsingEvent.JSON_OBJECT_OPENING:
 				if(config.getPrefix().isPrefix(event.getPath())) {
-					this.wrapper.newMappedInstance();					
+					this.wrapper.newMappedInstance();
 				}
 				val = handleJsonOpening(ao,HashMap.class);
+				opening = true;
 				break;
 			case ParsingEvent.JSON_ARRAY_ITEM:
 				ValuableEventWrapper vwrapper = event.adapt(ValuableEventWrapper.class);
@@ -138,26 +154,34 @@ public class MappingHandler<T> implements LysonParserHandler {
 				break;
 			case ParsingEvent.JSON_OBJECT_CLOSING:
 			case ParsingEvent.JSON_ARRAY_CLOSING:
-				if(!stack.isEmpty()) {
-					stack.pop();
-				}
-				return true;
+				closing = true;
 			default:
 				break;
-		}
-		if(!stack.isEmpty()) {
+		}		
+		if(!stack.isEmpty()) {			
 			Object obj = stack.peek();
-			if(obj instanceof List) {
+			if(obj instanceof MappingHandler) {	
+				//if the intermediate MappingHandler is not waiting for a closing
+				//event of an sub-intermediate data structure it is the one closed 
+				//by the current event
+				if(closing && !((MappingHandler)obj).waitClosing()) {
+					stack.pop();
+				} else {
+					((MappingHandler)obj).handle(event);				
+				}
+				return true;
+			}
+			if(closing) {
+				stack.pop();
+				return true;
+			}
+			if(obj instanceof List) {				
 				((List)obj).add(val);
 			} else if(obj instanceof Map){
 				((Map)obj).put(key , val);	
-			} else if(obj instanceof MappingHandler) {				
-				((MappingHandler)obj).handle(event);
-				return true;
 			}
 		}
-		if((ao!=null || !stack.isEmpty()) 
-		&& (event.getType()==ParsingEvent.JSON_ARRAY_OPENING ||event.getType()==ParsingEvent.JSON_OBJECT_OPENING)) {
+		if((ao!=null || !stack.isEmpty()) && opening) {
 			stack.push(val);
 		}
 	    return true;
@@ -285,7 +309,7 @@ public class MappingHandler<T> implements LysonParserHandler {
 			}
 		}
 		if(Number.class.isAssignableFrom(clazz)) {
-			return n;
+			return castToNumber(clazz, n);
 		}
 		switch(clazz.getSimpleName()) {
 			case "boolean" :
@@ -337,26 +361,6 @@ public class MappingHandler<T> implements LysonParserHandler {
 		if(val instanceof Number) {
 			return ((Number)val).intValue() > 0;
 		}
-		if(val.getClass().isPrimitive()) {
-			switch(val.getClass().getSimpleName()) {
-//				The JSON Stream parsing never returns a char 
-//				case "char":
-//					if(((char)val) == '1') {
-//						return true;
-//					}
-//					break;
-				case "byte":				
-				case "short":	
-				case "int":	
-				case "long":
-				case "float":
-				case "double":
-					return Double.valueOf(String.valueOf(val)).intValue() > 0;
-			}
-		}
-		if(val instanceof Number) {
-			return ((Number)val).intValue() > 0;
-		}
 		return false;
 	}
 
@@ -371,26 +375,35 @@ public class MappingHandler<T> implements LysonParserHandler {
 				return (char)i;
 			}		
 		}
-		if(val.getClass().isPrimitive()) {
-			switch(val.getClass().getSimpleName()) {
-				case "boolean":
-					if((boolean)val) {
-						return '1';
-					} else {
-						return '0';
-					}
-				case "byte":				
-				case "short":	
-				case "int":	
-				case "long":
-				case "float":
-				case "double":
-					int i = Double.valueOf(String.valueOf(val)).intValue();
-					if(i >= Character.MIN_VALUE && i <= Character.MAX_VALUE) {
-						return (char)i;
-					}			
-				}
-		}
+		if(val.getClass() == Boolean.class){
+			if(((Boolean)val).booleanValue()) {
+				return '1';
+			} else {
+				return '0';
+			}
+		}	
 		return c;
+	}
+
+	private Object castToNumber(Class<?> clazz, Number number) {
+		switch(clazz.getSimpleName()) {
+			case "Byte" :
+				return Byte.valueOf(number.byteValue());
+			case "Short" :
+				return Short.valueOf(number.shortValue());
+			case "Integer":
+				return Integer.valueOf(number.intValue());
+			case "Long":
+				return Long.valueOf(number.longValue());
+			case "BigInteger":
+				return BigInteger.valueOf(number.longValue());
+			case "Float":
+				return Float.valueOf(number.floatValue());
+			case "Double":	
+				return Double.valueOf(number.doubleValue());
+			case "BigDecimal":	
+				return BigDecimal.valueOf(number.doubleValue());
+		}
+		return null;
 	}
 }
