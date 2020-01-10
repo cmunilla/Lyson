@@ -23,6 +23,13 @@
  */
 package cmssi.lyson.event;
 
+/**
+ * A KeyValueEventWrapper wraps a {@link ParsingEvent} and implements the {@link KeyValueEvent}
+ * interface
+ * 
+ * @author cmunilla@cmssi.fr
+ * @version 0.3
+ */
 public class KeyValueEventWrapper extends ValuableEventWrapper implements KeyValueEvent {
 
 	private String key;

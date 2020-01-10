@@ -24,9 +24,8 @@
 package cmssi.lyson.event;
 
 /**
- * JSON ParsingEvent dedicated to one holding a String 
- * key mapped to an Object value
- *  
+ * A KeyValueEvent holds both a String key and a primitive value 
+ * 
  * @author cmunilla@cmssi.fr
  * @version 0.3
  */

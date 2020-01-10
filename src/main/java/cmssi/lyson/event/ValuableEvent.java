@@ -24,8 +24,7 @@
 package cmssi.lyson.event;
 
 /**
- * JSON ParsingEvent dedicated to one holding an 
- * Object value
+ * A ValuableEvent holds an value object
  *  
  * @author cmunilla@cmssi.fr
  * @version 0.3

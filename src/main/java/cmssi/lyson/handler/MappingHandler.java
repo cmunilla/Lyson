@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cmssi.lyson.LysonParser;
 import cmssi.lyson.event.KeyValueEventWrapper;
 import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.event.ValuableEventWrapper;
@@ -234,13 +235,15 @@ public class MappingHandler<T> implements LysonParserHandler {
 	private void assignValue(AccessibleObject ao, Object val) {
 		if(ao == null) {
 			return;
-		}			
+		}	
 		try {
 			ao.setAccessible(true);
 			if(ao instanceof Field) {
-				((Field)ao).set(this.wrapper.mapped() , val);	
+				Object obj = cast(((Field)ao).getType(),val);
+				((Field)ao).set(this.wrapper.mapped() , obj);	
 			}else if(ao instanceof Method) {
-				((Method)ao).invoke(this.wrapper.mapped() , val);	
+				Object obj = cast(((Method)ao).getParameterTypes()[0],val);
+				((Method)ao).invoke(this.wrapper.mapped() , obj);	
 			}
 		} catch (IllegalArgumentException 
 			   | IllegalAccessException 
@@ -249,5 +252,145 @@ public class MappingHandler<T> implements LysonParserHandler {
 				LOG.log(Level.SEVERE,e.getMessage(),e);
 			}
 		}
+	}
+	
+	//
+	private Object cast(Class<?> clazz, Object val) {
+		if(val == null) {
+			return null;
+		}
+		if(clazz.isAssignableFrom(val.getClass())) {
+			return val;
+		}	
+		String str = String.valueOf(val);
+		if(clazz == String.class) {
+			return str;
+		}
+		if(clazz == Class.class) {
+			try {
+				return Class.forName(str);
+			} catch(ClassNotFoundException e) {
+				if(LOG.isLoggable(Level.FINER)) {
+					LOG.log(Level.FINER,e.getMessage(),e);
+				}
+				return null;
+			}
+		}
+		Number n = null;
+		try {
+			n = LysonParser.numberFromString(str);
+		} catch(NumberFormatException e) {
+			if(LOG.isLoggable(Level.FINER)) {
+				LOG.log(Level.FINER,e.getMessage(),e);
+			}
+		}
+		if(Number.class.isAssignableFrom(clazz)) {
+			return n;
+		}
+		switch(clazz.getSimpleName()) {
+			case "boolean" :
+				return castToBoolean(val);
+			case "Boolean" :
+				return Boolean.valueOf(castToBoolean(val));
+			case "char":
+				return castToChar(val);
+			case "Character":
+				return Character.valueOf(castToChar(val));
+			case "byte":
+				if(n == null) {
+					return (byte)0;
+				}
+				return n.byteValue();
+			case "short":	
+				if(n == null) {
+					return (short)0;
+				}
+				return n.shortValue();
+			case "int":	
+				if(n == null) {
+					return 0;
+				}
+				return n.intValue();
+			case "long":	
+				if(n == null) {
+					return 0l;
+				}
+				return n.longValue();
+			case "float":
+				if(n == null) {
+					return 0f;
+				}				
+				return n.floatValue();
+			case "double":
+				if(n == null) {
+					return 0d;
+				}			
+				return n.doubleValue();	
+		}
+		return null;
+	}
+	
+	private boolean castToBoolean(Object val) {
+		if(val.getClass() == String.class) {
+			return Boolean.parseBoolean((String)val);
+		}
+		if(val instanceof Number) {
+			return ((Number)val).intValue() > 0;
+		}
+		if(val.getClass().isPrimitive()) {
+			switch(val.getClass().getSimpleName()) {
+//				The JSON Stream parsing never returns a char 
+//				case "char":
+//					if(((char)val) == '1') {
+//						return true;
+//					}
+//					break;
+				case "byte":				
+				case "short":	
+				case "int":	
+				case "long":
+				case "float":
+				case "double":
+					return Double.valueOf(String.valueOf(val)).intValue() > 0;
+			}
+		}
+		if(val instanceof Number) {
+			return ((Number)val).intValue() > 0;
+		}
+		return false;
+	}
+
+	private char castToChar(Object val) {
+		char c = 0;
+		if(val.getClass() == String.class && ((String)val).length()==1) {
+			return ((String)val).charAt(0);
+		}
+		if(val instanceof Number) {
+			int i =((Number)val).intValue();
+			if(i >= Character.MIN_VALUE && i <= Character.MAX_VALUE) {
+				return (char)i;
+			}		
+		}
+		if(val.getClass().isPrimitive()) {
+			switch(val.getClass().getSimpleName()) {
+				case "boolean":
+					if((boolean)val) {
+						return '1';
+					} else {
+						return '0';
+					}
+				case "byte":				
+				case "short":	
+				case "int":	
+				case "long":
+				case "float":
+				case "double":
+					int i = Double.valueOf(String.valueOf(val)).intValue();
+					if(i >= Character.MIN_VALUE && i <= Character.MAX_VALUE) {
+						return (char)i;
+					}			
+				}
+		}
+		return c;
 	}
 }

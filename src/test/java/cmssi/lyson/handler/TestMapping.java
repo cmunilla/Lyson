@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.junit.Test;
 
@@ -19,14 +21,66 @@ public class TestMapping {
 
 	@Test
 	public void testMyAnnotatedMappedMappingJSON() {
+		Logger.getLogger(MappingHandler.class.getName()).setLevel(Level.FINEST);
 		MappingHandler<MyAnnotatedMapped> mapping = new MappingHandler<>(MyAnnotatedMapped.class);
-		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":{\"fst\": 0.55,\"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\"},\"key2\":\"3\"}"
-				).parse(mapping);		
+		new LysonParser("{"
+		+ "\"key1\":\"IT IS KEY ONE\\b\","
+		+ "\"key2\": \"3\","
+		+ "\"key3\":{\"fst\": 0.55, \"array\":[8,2,1,{\"thd\" => \"more\"}],"
+		+ "\"key4\": \"\u00C8\",\"snd\":\"another\"},"
+		+ "\"key5\": 128,"
+		+ "\"key6\": 485668897.8779,"
+		+ "\"key7\": \"true\","
+		+ "\"key8\": 0.0001,"
+		+ "\"key9\":  215,"
+		+ "\"key10\":  "+String.valueOf(Byte.MAX_VALUE-1)+","
+		+ "\"key11\":  "+String.valueOf(Short.MAX_VALUE-1)+","
+		+ "\"key12\":  "+String.valueOf(Integer.MAX_VALUE-1)+","
+		+ "\"key13\":  "+String.valueOf(Long.MAX_VALUE-1)+","
+		+ "\"key14\":  "+String.valueOf(Float.MAX_VALUE-1)+","
+		+ "\"key15\":  "+String.valueOf(Double.MAX_VALUE-1)+","
+		+ "\"key16\": \"cmssi.lyson.handler.MyMapped\","
+		+ "\"key17\": \"cmssi.lyson.handler.MyMapped3\","
+		+ "\"key18\": 128,"
+		+ "\"key19\": \"true\","
+		+ "\"key20\": \"null\","
+		+ "\"key21\": \"null\","
+		+ "\"key22\": \"null\","
+		+ "\"key23\": \"null\","
+		+ "\"key24\": \"null\","
+		+ "\"key25\": \"null\","
+		+ "\"key26\": 44,"
+		+ "\"key27\": null}"
+		).parse(mapping);		
 		MyAnnotatedMapped m = mapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(m.getKey3().getClass()));
 		assertTrue(List.class.isAssignableFrom(m.getKey3().get("array").getClass()));
 		assertEquals("IT IS KEY ONE\b",m.getKey1());
 		assertEquals("3",m.getKey2());
+		assertEquals('\u00C8',m.getKey4());
+		assertEquals(((char)128),m.getKey5());
+		assertEquals(((char)0),m.getKey6());
+		assertEquals(true,m.getKey7());
+		assertEquals(false,m.getKey8());
+		assertEquals(true,m.getKey9());
+		assertEquals(((byte)Byte.MAX_VALUE-1) ,m.getKey10());
+		assertEquals(((short)Short.MAX_VALUE-1) ,m.getKey11());
+		assertEquals(((int)Integer.MAX_VALUE-1) ,m.getKey12());
+		assertEquals(((long)Long.MAX_VALUE-1) ,m.getKey13());
+		assertEquals(((float)Float.MAX_VALUE-1) ,m.getKey14(),0);
+		assertEquals(((double)Double.MAX_VALUE-1) ,m.getKey15(),0);
+		assertEquals(MyMapped.class,m.getKey16());
+		assertEquals(null,m.getKey17());
+		assertEquals(Character.valueOf(((char)128)),m.getKey18());
+		assertEquals(Boolean.valueOf(true),m.getKey19());
+		assertEquals(((byte)0) ,m.getKey20());
+		assertEquals(((short)0) ,m.getKey21());
+		assertEquals(((int)0) ,m.getKey22());
+		assertEquals(((long)0) ,m.getKey23());
+		assertEquals(((float)0) ,m.getKey24(),0);
+		assertEquals(((double)0) ,m.getKey25(),0);
+		assertEquals("44" ,m.getKey26());
+		assertNull(m.getKey27());
 	}
 
 	@Test

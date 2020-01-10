@@ -23,7 +23,6 @@
  */
 package cmssi.lyson.event;
 
-
 /**
  * JSON parsing event implementation
  *  

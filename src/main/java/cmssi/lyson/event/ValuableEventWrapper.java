@@ -24,7 +24,8 @@
 package cmssi.lyson.event;
 
 /**
- * ValuableEvent implementation
+ * A ValuableEventWrapper wraps a {@link ParsingEvent} and implements the {@link ValuableEvent}
+ * interface
  * 
  * @author cmunilla@cmssi.fr
  * @version 0.3

@@ -151,6 +151,50 @@ public class LysonParser {
 		}
 	};
 	
+	/**
+     * Assumes that the String passed as parameter represents a numeric
+     * value. Try to convert it to a Number instance and returns it
+     * 
+     * @param s the String to convert into a Number instance
+     * 
+     * @return a new Number instance based on the specified numeric value
+     * represented as a String 
+     */
+	public static Number numberFromString(String s) {
+    	Number num = null;
+    	if(s.indexOf('.') < 0) {
+        	if (s.charAt(0) == '0') {
+            	try {
+                    if (s.length() > 2 && (s.charAt(1) == 'x' || s.charAt(1) == 'X')) {                            
+                            num = Integer.parseInt(s.substring(2), 16);
+                    } else {
+                            num = Integer.parseInt(s, 8);
+                    }
+                    num = Integer.valueOf((int)num);
+            	} catch(Exception ex ){
+         			LOG.log(Level.FINEST, ex.getMessage(), ex);
+         		}
+            } else {
+            	num = new BigInteger(s);
+            	if(((BigInteger)num).compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {                    	
+            		Long myLong = Long.valueOf(s);
+                    if (myLong.longValue() == myLong.intValue()) {
+                        num = Integer.valueOf(myLong.intValue());
+                    } else {
+                        num = myLong;
+                    }
+            	}
+            }
+        } else {
+            num = new BigDecimal(s);
+            if((((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) <= 0
+            	&& ((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) >= 0)
+            	||  ((BigDecimal)num).intValue() == 0) {
+                num = Double.valueOf(s);
+            }
+        }
+        return num;
+    }
 	
 	private static final int MAX_THREAD = 100;
 	private static final int BUFFER_SIZE = 1024*60;
@@ -735,42 +779,11 @@ public class LysonParser {
         try {  	
      		char b = s.charAt(0);                
      		if ((b >= '0' && b <= '9') || b == '.' || b == '-' || b == '+') {                
-                Number num = null;      
-                if(s.indexOf('.') < 0) {
-                	if (b == '0') {
-                    	try {
-                            if (s.length() > 2 && (s.charAt(1) == 'x' || s.charAt(1) == 'X')) {                            
-                                    num = Integer.parseInt(s.substring(2), 16);
-                            } else {
-                                    num = Integer.parseInt(s, 8);
-                            }
-                    	} catch(Exception ex ){
-                 			LOG.log(Level.FINEST, ex.getMessage(), ex);
-                 		}
-                    } else {
-	                	num = new BigInteger(s);
-	                	if(((BigInteger)num).compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {                    	
-	                		Long myLong = Long.valueOf(s);
-	                        if (myLong.longValue() == myLong.intValue()) {
-	                            num = myLong.intValue();
-	                        } else {
-	                            num = myLong;
-	                        }
-	                	}
-                    }
-                } else {
-                    num = new BigDecimal(s);
-                    if((((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) <= 0
-                    	&& ((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) >= 0)
-                    	||  ((BigDecimal)num).intValue() == 0) {
-	                    num = Double.valueOf(s);
-                    }
-                }
-                return num;
+                return numberFromString(s);
             }
  		} catch(Exception ex) {
  			LOG.log(Level.FINEST, ex.getMessage(), ex);
  		}
         return s;
-    }    
+    }  
 }

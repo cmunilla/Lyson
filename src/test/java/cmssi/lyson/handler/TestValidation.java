@@ -97,12 +97,6 @@ public class TestValidation {
 		assertFalse(new LysonParser("{\"key1\":\"NOT PARSED\0\"}").valid());	
 	}
 
-//	@Test
-//	public void testNoHandlerNoParsing() {
-//		//nothing happen
-//		new LysonParser("{\"key1\":\"NOT PARSED\"}").parse();	
-//	}
-
 	@Test
 	public void testUserDefinedHandler() {
 		StringBuilder expected = new StringBuilder();
