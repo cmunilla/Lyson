@@ -14,7 +14,6 @@ public class MyAnnotatedMapped {
 	@LysonMapping
 	private String key2;
 
-	@LysonMapping
 	private Map key3;
 	
 	@LysonMapping
@@ -90,10 +89,15 @@ public class MyAnnotatedMapped {
 	private String key27;
 
 	public MyAnnotatedMapped(){}
-	
+
 	@LysonMapping
 	public void setKey1(String key1) {
 		this.key1=key1;
+	}
+
+	@LysonMapping
+	public void setKey3(Map key3) {
+		this.key3=key3;
 	}
 	
 	public MySubAnnotatedMapped getKey0(){

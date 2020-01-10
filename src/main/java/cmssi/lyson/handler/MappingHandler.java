@@ -101,12 +101,11 @@ public class MappingHandler<T> implements LysonParserHandler {
 		
 	@Override
 	public boolean handle(ParsingEvent event) {
-		if(event == null) {
+		if(event == null) 
 			return false;
-		}		
-		if(LOG.isLoggable(Level.FINEST)) {
+		if(LOG.isLoggable(Level.FINEST)) 
 			LOG.log(Level.FINEST,event.toString());
-		}
+		
 		Object val = null;
 		MappingConfiguration<T> config = this.wrapper.getMappingConfiguration();
 		String key =  config.getPrefix().getSuffix(event.getPath());		
@@ -124,33 +123,34 @@ public class MappingHandler<T> implements LysonParserHandler {
 		boolean closing = false;
 		switch(event.getType()) {
 			case ParsingEvent.JSON_ARRAY_OPENING:
-				if(config.getPrefix().isPrefix(event.getPath())) {
+				if(config.getPrefix().isPrefix(event.getPath())) 
 					this.wrapper.newMappedInstance();
-				}
-				val = handleJsonOpening(ao,ArrayList.class);
+				else 
+					val = handleJsonOpening(ao,ArrayList.class);
 				opening = true;
 				break;
 			case ParsingEvent.JSON_OBJECT_OPENING:
-				if(config.getPrefix().isPrefix(event.getPath())) {
+				if(config.getPrefix().isPrefix(event.getPath())) 
 					this.wrapper.newMappedInstance();
-				}
-				val = handleJsonOpening(ao,HashMap.class);
+				else 
+					val = handleJsonOpening(ao,HashMap.class);
 				opening = true;
 				break;
 			case ParsingEvent.JSON_ARRAY_ITEM:
 				ValuableEventWrapper vwrapper = event.adapt(ValuableEventWrapper.class);
-				if(vwrapper!=null) {
-					val = vwrapper.getValue();
-				}
-				assignValue(ao,val);
+				if(vwrapper!=null) 
+					val = vwrapper.getValue();				
+				if(this.stack.isEmpty())
+					assignValue(ao,val);
 				break;
 			case ParsingEvent.JSON_OBJECT_ITEM:
 				KeyValueEventWrapper kvw = event.adapt(KeyValueEventWrapper.class);
 				if(kvw!=null) {
 					key = kvw.getKey();
 					val = kvw.getValue();
-				}		
-				assignValue(ao,val);
+				}	
+				if(this.stack.isEmpty())
+					assignValue(ao,val);
 				break;
 			case ParsingEvent.JSON_OBJECT_CLOSING:
 			case ParsingEvent.JSON_ARRAY_CLOSING:
@@ -164,34 +164,30 @@ public class MappingHandler<T> implements LysonParserHandler {
 				//if the intermediate MappingHandler is not waiting for a closing
 				//event of an sub-intermediate data structure it is the one closed 
 				//by the current event
-				if(closing && !((MappingHandler)obj).waitClosing()) {
+				if(closing && !((MappingHandler)obj).waitClosing()) 
 					stack.pop();
-				} else {
-					((MappingHandler)obj).handle(event);				
-				}
+				else 
+				    ((MappingHandler)obj).handle(event);				
 				return true;
 			}
 			if(closing) {
 				stack.pop();
 				return true;
 			}
-			if(obj instanceof List) {				
+			if(obj instanceof List) 				
 				((List)obj).add(val);
-			} else if(obj instanceof Map){
-				((Map)obj).put(key , val);	
-			}
+			 else if(obj instanceof Map)
+				((Map)obj).put(key , val);			
 		}
-		if((ao!=null || !stack.isEmpty()) && opening) {
-			stack.push(val);
-		}
+		if((ao!=null || !stack.isEmpty()) && opening) 
+			stack.push(val);		
 	    return true;
 	}
 
 	@Override
 	public void handle(LysonParsingException parsingException) {
-		if(LOG.isLoggable(Level.SEVERE)) {
+		if(LOG.isLoggable(Level.SEVERE)) 
 			LOG.log(Level.SEVERE,parsingException.getMessage(),parsingException);
-		}
 	}
 	
 	/**
@@ -216,9 +212,8 @@ public class MappingHandler<T> implements LysonParserHandler {
 		try {
 			defaultValue = defaultValueType.getConstructor().newInstance();	
 		} catch(ReflectiveOperationException e) {
-			if(LOG.isLoggable(Level.SEVERE)) {
+			if(LOG.isLoggable(Level.SEVERE))
 				LOG.log(Level.SEVERE, e.getMessage(), e);
-			}
 		}		
 		if(ao == null) {
 			val = defaultValue;
@@ -242,13 +237,12 @@ public class MappingHandler<T> implements LysonParserHandler {
 					val = sub.getMapped();	
 					stacked = sub;
 				} catch(NullPointerException e) {
-					if(LOG.isLoggable(Level.SEVERE)){
+					if(LOG.isLoggable(Level.SEVERE))
 						LOG.log(Level.SEVERE,e.getMessage(),e);
-					}
 				}
 			}
+			assignValue(ao,val);
 		}
-		assignValue(ao,val);
 		return stacked;
 	}
 	
@@ -257,24 +251,20 @@ public class MappingHandler<T> implements LysonParserHandler {
 	//by setting it if it's a Field or invoking it if it's a
 	//Method
 	private void assignValue(AccessibleObject ao, Object val) {
-		if(ao == null) {
-			return;
-		}	
+		if(ao == null) 
+			return;			
 		try {
 			ao.setAccessible(true);
 			if(ao instanceof Field) {
 				Object obj = cast(((Field)ao).getType(),val);
 				((Field)ao).set(this.wrapper.mapped() , obj);	
-			}else if(ao instanceof Method) {
+			} else if(ao instanceof Method) {
 				Object obj = cast(((Method)ao).getParameterTypes()[0],val);
 				((Method)ao).invoke(this.wrapper.mapped() , obj);	
 			}
-		} catch (IllegalArgumentException 
-			   | IllegalAccessException 
-			   | InvocationTargetException e) {
-			if(LOG.isLoggable(Level.SEVERE)) {
+		} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+			if(LOG.isLoggable(Level.SEVERE))
 				LOG.log(Level.SEVERE,e.getMessage(),e);
-			}
 		}
 	}
 	
@@ -287,16 +277,14 @@ public class MappingHandler<T> implements LysonParserHandler {
 			return val;
 		}	
 		String str = String.valueOf(val);
-		if(clazz == String.class) {
+		if(clazz == String.class)
 			return str;
-		}
 		if(clazz == Class.class) {
 			try {
 				return Class.forName(str);
 			} catch(ClassNotFoundException e) {
-				if(LOG.isLoggable(Level.FINER)) {
+				if(LOG.isLoggable(Level.FINER))
 					LOG.log(Level.FINER,e.getMessage(),e);
-				}
 				return null;
 			}
 		}
@@ -304,9 +292,8 @@ public class MappingHandler<T> implements LysonParserHandler {
 		try {
 			n = LysonParser.numberFromString(str);
 		} catch(NumberFormatException e) {
-			if(LOG.isLoggable(Level.FINER)) {
+			if(LOG.isLoggable(Level.FINER))
 				LOG.log(Level.FINER,e.getMessage(),e);
-			}
 		}
 		if(Number.class.isAssignableFrom(clazz)) {
 			return castToNumber(clazz, n);
@@ -355,20 +342,17 @@ public class MappingHandler<T> implements LysonParserHandler {
 	}
 	
 	private boolean castToBoolean(Object val) {
-		if(val.getClass() == String.class) {
+		if(val.getClass() == String.class) 
 			return Boolean.parseBoolean((String)val);
-		}
-		if(val instanceof Number) {
+		if(val instanceof Number) 
 			return ((Number)val).intValue() > 0;
-		}
 		return false;
 	}
 
 	private char castToChar(Object val) {
 		char c = 0;
-		if(val.getClass() == String.class && ((String)val).length()==1) {
+		if(val.getClass() == String.class && ((String)val).length()==1)
 			return ((String)val).charAt(0);
-		}
 		if(val instanceof Number) {
 			int i =((Number)val).intValue();
 			if(i >= Character.MIN_VALUE && i <= Character.MAX_VALUE) {
@@ -376,11 +360,10 @@ public class MappingHandler<T> implements LysonParserHandler {
 			}		
 		}
 		if(val.getClass() == Boolean.class){
-			if(((Boolean)val).booleanValue()) {
+			if(((Boolean)val).booleanValue())
 				return '1';
-			} else {
+			else
 				return '0';
-			}
 		}	
 		return c;
 	}
@@ -397,13 +380,13 @@ public class MappingHandler<T> implements LysonParserHandler {
 				case "Long":
 					return Long.valueOf(number.longValue());
 				case "BigInteger":
-					return BigInteger.valueOf(number.longValue());
+					return new BigInteger(number.toString());
 				case "Float":
 					return Float.valueOf(number.floatValue());
 				case "Double":	
 					return Double.valueOf(number.doubleValue());
-				case "BigDecimal":	
-					return BigDecimal.valueOf(number.doubleValue());
+				case "BigDecimal":
+					return new BigDecimal(number.toString());
 			}
 		}
 		return null;

@@ -187,10 +187,9 @@ public class LysonParser {
             }
         } else {
             num = new BigDecimal(s);
-            if((((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) <= 0
-            	&& ((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) >= 0)
-            	||  ((BigDecimal)num).intValue() == 0) {
-                num = Double.valueOf(s);
+            if(((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) <= 0
+            	&& ((BigDecimal)num).compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) >= 0) {
+                num = ((BigDecimal)num).doubleValue();
             }
         }
         return num;

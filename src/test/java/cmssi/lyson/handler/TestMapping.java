@@ -64,8 +64,8 @@ public class TestMapping {
 		assertEquals(4,((List)m.getKey0().getKey4()).size());
 		assertEquals('1', m.getKey0().getKey5());
 		assertEquals(Double.valueOf(1.225544d), m.getKey0().getKey6(),0);
-		assertEquals(BigInteger.valueOf(Long.valueOf("1000789446512301")), m.getKey0().getKey7());
-		assertEquals(BigDecimal.valueOf(Double.valueOf("44.2222222222222222228")), m.getKey0().getKey8());
+		assertEquals(new BigInteger("1000789446512301"), m.getKey0().getKey7());
+		assertEquals(new BigDecimal("44.22222222222222"), m.getKey0().getKey8());
 		assertEquals(Byte.valueOf("5"), m.getKey0().getKey9());
 		assertEquals(Short.valueOf("1024"), m.getKey0().getKey10());
 		assertEquals(Integer.valueOf("65535"), m.getKey0().getKey11());
@@ -129,7 +129,7 @@ public class TestMapping {
 		new LysonParser("{\"key1\":\"IT IS KEY ONE\\f\",\"key3\":{\"fst\": 005,\"array\":[8,2,1,{\"thd\" => \"mor\\u00C8\"}],\"snd\":\"another\"},\"key2\":\"3\"}"
 				).parse(mapping);		
 		MyOtherAnnotatedMapped m = mapping.getMapped();
-		assertEquals(1,m.getKey3());
+		assertEquals(8,m.getKey3());
 		assertEquals("IT IS KEY ONE\f",m.getKey2());
 		assertEquals("3",m.getKey1());
 	}
@@ -168,7 +168,7 @@ public class TestMapping {
 				).parse(mapping);		
 		MyOtherAnnotatedMapped m = mapping.getMapped();
 		assertEquals(mapped, m);
-		assertEquals(1,m.getKey3());
+		assertEquals(8,m.getKey3());
 		assertEquals("IT IS KEY ONE\t",m.getKey2());
 		assertEquals("3\"",m.getKey1());
 	}
@@ -473,7 +473,7 @@ public class TestMapping {
 		p = m.get(9);
 		assertTrue(Map.class.isAssignableFrom(p.getKey3().getClass()));
 		assertEquals(3,((Map)p.getKey3()).get("subkey1"));
-		assertEquals("val3",p.getKey1());
+		assertEquals("val3", p.getKey1());
 		assertEquals("val22",p.getKey2());
 
 		p = m.get(8);

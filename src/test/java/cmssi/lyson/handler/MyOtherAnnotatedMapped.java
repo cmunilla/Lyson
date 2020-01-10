@@ -10,7 +10,7 @@ public class MyOtherAnnotatedMapped {
 	@LysonMapping(mapping="key1")
 	private String key2;
 			
-	@LysonMapping(mapping="/key3/array/[2]")
+	@LysonMapping(mapping="/key3/array/[0]")
 	private int key3;
 
 	public MyOtherAnnotatedMapped(){}
