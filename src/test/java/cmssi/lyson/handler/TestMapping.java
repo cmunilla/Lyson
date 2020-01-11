@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import org.junit.Test;
 
 import cmssi.lyson.LysonParser;
+import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.handler.MappingHandler;
 
 public class TestMapping {
@@ -99,6 +100,65 @@ public class TestMapping {
 		assertNull(m.getKey27());
 	}
 
+	@Test
+	public void testMultiMapped() {
+		MappingHandler<MyMapped> myMappedMapping = new MappingHandler<>(MyMapped.class);
+		MappingHandler rawMapping = new MappingHandler();
+		MappingHandler<MyOtherAnnotatedMapped> myOtherAnnotatedMappedMapping = new MappingHandler<>(MyOtherAnnotatedMapped.class);
+		MappingHandler<MyMapped2> myMapped2Mapping = new MappingHandler<>(MyMapped2.class);
+		
+		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":{\"fst\": 0.55,\"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\"},\"key2\":\"3\"}"
+			).parse(
+			myMappedMapping,
+			rawMapping,
+			new MappingHandler<Object>() {
+				private int count = 0;
+				@Override
+				public boolean handle(ParsingEvent event) {
+					if(count++ == 10) {
+						return false;
+					}
+					return true;
+				}
+			},
+			myOtherAnnotatedMappedMapping,
+			myMapped2Mapping,
+			new MappingHandler<Object>() {
+				private int count = 0;
+				@Override
+				public boolean handle(ParsingEvent event) {
+					if(count++ == 3) {
+						return false;
+					}
+					return true;
+				}
+			});	
+	
+		MyMapped2 m = myMapped2Mapping.getMapped();
+		assertEquals("IT IS KEY ONE\b",m.getKey1());
+		assertEquals("3",m.getKey2());
+		assertEquals(MySubMapped.class,m.getKey3().getClass());
+		assertEquals(0,((MySubMapped)m.getKey3()).getSubKey1());
+		assertNull(((MySubMapped)m.getKey3()).getSubKey2());
+		
+		Map l = (Map) rawMapping.getMapped();
+		assertTrue(Map.class.isAssignableFrom(l.get("key3").getClass()));
+		assertTrue(List.class.isAssignableFrom(((Map)l.get("key3")).get("array").getClass()));
+		assertEquals("IT IS KEY ONE\b",l.get("key1"));
+		assertEquals("3",l.get("key2"));	
+		
+		MyOtherAnnotatedMapped v = myOtherAnnotatedMappedMapping.getMapped();
+		assertEquals(8,v.getKey3());
+		assertEquals("IT IS KEY ONE\b",v.getKey2());
+		assertEquals("3",v.getKey1());
+		
+		MyMapped w = myMappedMapping.getMapped();
+		assertTrue(Map.class.isAssignableFrom(w.getKey3().getClass()));
+		assertTrue(List.class.isAssignableFrom(w.getKey3().get("array").getClass()));
+		assertEquals("IT IS KEY ONE\b",w.getKey1());
+		assertEquals("3",w.getKey2());
+	}
+	
 	@Test
 	public void testMyMappedMappingJSON() {
 		MappingHandler<MyMapped> mapping = new MappingHandler<>(MyMapped.class);

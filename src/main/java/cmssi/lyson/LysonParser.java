@@ -44,7 +44,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -100,8 +99,6 @@ public class LysonParser {
 		 */
 		List<Future<Boolean>> invokeAll(Collection<LysonParserHandlerCallable> tasks, ParsingEvent event)
 	    throws InterruptedException {
-	        if (tasks == null)
-	            throw new NullPointerException();
 	        ArrayList<Future<Boolean>> futures = new ArrayList<>(tasks.size());
 	        try {
 	            for (LysonParserHandlerCallable t : tasks) {
@@ -269,10 +266,10 @@ public class LysonParser {
 	            int offset = 0;
 	            for(int pos = 0; pos < futures.size(); pos++) {
 	            	try {
-						if(futures.get(pos).get(1,TimeUnit.SECONDS).booleanValue()) {
+						if(futures.get(pos).get().booleanValue()) {
 							continue;
 						}
-					} catch (ExecutionException | TimeoutException e) {
+					} catch (ExecutionException e) {
 						if(LOG.isLoggable(Level.SEVERE)) {
 							LOG.log(Level.SEVERE,e.getMessage(),e);
 						}
