@@ -23,7 +23,7 @@
  */
 /**
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 module cmssi.lyson {
 	

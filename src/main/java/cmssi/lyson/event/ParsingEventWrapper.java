@@ -27,7 +27,7 @@ package cmssi.lyson.event;
  * A ParsingEvent wrapper service
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public interface ParsingEventWrapper {
 

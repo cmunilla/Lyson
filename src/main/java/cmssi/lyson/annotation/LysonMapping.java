@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
 /**
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 @Documented
 @Retention(RUNTIME)

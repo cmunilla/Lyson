@@ -27,7 +27,7 @@ package cmssi.lyson.event;
  * JSON parsing event implementation
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public class LysonParsingEvent implements ParsingEvent {
 	

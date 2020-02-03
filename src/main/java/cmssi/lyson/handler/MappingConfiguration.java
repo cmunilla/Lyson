@@ -41,7 +41,7 @@ import cmssi.lyson.annotation.LysonMapping;
  * Configuration of a mapping process
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public class MappingConfiguration<T> {
 	

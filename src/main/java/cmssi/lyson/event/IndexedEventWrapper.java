@@ -27,7 +27,7 @@ package cmssi.lyson.event;
  * IndexedEvent implementation
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public class IndexedEventWrapper extends AbstractParsingEventWrapper implements IndexedEvent {
 

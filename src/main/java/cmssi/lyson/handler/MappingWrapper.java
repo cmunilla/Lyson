@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * Wrapped the mapped Objects and offer an uniform access to them
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public class MappingWrapper<T> {
 	

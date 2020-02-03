@@ -48,7 +48,7 @@ import cmssi.lyson.exception.LysonParsingException;
  * {@link LysonParserHandler} implementation dedicated to a JSON chars sequence mapping
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public class MappingHandler<T> implements LysonParserHandler {
 

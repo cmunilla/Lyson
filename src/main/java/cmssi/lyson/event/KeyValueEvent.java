@@ -27,7 +27,7 @@ package cmssi.lyson.event;
  * A KeyValueEvent holds both a String key and a primitive value 
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public interface KeyValueEvent extends ValuableEvent {
 	

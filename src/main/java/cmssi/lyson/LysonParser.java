@@ -63,7 +63,7 @@ import cmssi.lyson.handler.ValidationHandler;
  * Lazy JSON Parser
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.3
+ * @version 0.4
  */
 public class LysonParser {
 
@@ -256,7 +256,7 @@ public class LysonParser {
     		if(length > MAX_THREAD) {
     			length = MAX_THREAD;
     		}
-	    	var callables = new LinkedList<LysonParserHandlerCallable>();
+    		LinkedList<LysonParserHandlerCallable> callables = new LinkedList<>();
     		Arrays.stream(handlers).forEach(h -> {
     			callables.add(new LysonParserHandlerCallable(h));
     		});

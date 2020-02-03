@@ -3,7 +3,7 @@
   
   <groupId>cmssi.util</groupId>
   <artifactId>lyson</artifactId>
-  <version>0.3</version>
+  <version>0.4</version>
   
   <name>lyson</name>
   <description>Lazy JSON</description>
@@ -28,15 +28,50 @@
   </dependencies>
   
   <build>
+  		<sourceDirectory>src/main</sourceDirectory>
 		<plugins>
 	        <plugin>
 	          <artifactId>maven-compiler-plugin</artifactId>
 	          <version>3.8.0</version>
-	          <configuration>
-	            <source>11</source>
-	            <target>11</target>
-	            <fork>true</fork>
-	          </configuration>
+	          <configuration>	  
+	          	<source>8</source>
+	            <target>8</target>
+	            <fork>true</fork>	
+	          </configuration> 
+	          <executions>
+	          	<execution>
+	          		<id>default-compile</id>
+	          		<goals>
+	          			<goal>compile</goal>
+	          		</goals>
+	          		<phase>compile</phase>
+	          		<configuration>
+	          			<includes>
+	          				<include>java/**/*.java</include>
+	          			</includes>
+	          		</configuration>
+	          	</execution>
+	          	<execution>
+	          		<id>compile-module-info</id>
+	          		<goals>
+	          			<goal>compile</goal>
+	          		</goals>
+	          		<phase>compile</phase>
+	          		<configuration>
+	          			<release>9</release>
+	          			<multiReleaseOutput>true</multiReleaseOutput>
+	          			<compilerArgs>
+	          				<arg>-verbose</arg> 
+	          			</compilerArgs>
+	          			<includes>
+	          				<include>java-9/**/*.java</include>
+	          			</includes>
+			          	<source>9</source>
+			            <target>9</target>
+			            <fork>true</fork>	
+	          		</configuration>
+	          	</execution>
+	          </executions> 
 	        </plugin>
 	        <plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -125,9 +160,11 @@
 							<instructions>								
 								<Built-By>cmunilla@cmssi.fr</Built-By>
 								<Automatic-Module-Name>cmssi.lyson</Automatic-Module-Name>
+								<Multi-Release>true</Multi-Release>
 								<_nouses>true</_nouses>  
 								<_nodefaultversion>true</_nodefaultversion>
 								<_failok>true</_failok>
+								<Require-Capability>osgi.ee;filter:="(&amp;(osgi.ee=JavaSE)(version&gt;=1.8))"</Require-Capability>
 							</instructions>
 						</configuration>
                 	</execution>
