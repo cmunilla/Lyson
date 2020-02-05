@@ -96,7 +96,8 @@ public class MappingWrapper<T> {
 	 * Returns the mapping result object that can be a single 
 	 * instance of the mapped Type of this MappingWrapper, or 
 	 * a List of instances of the mapped type, if this last one
-	 * has been annotated with a {@link LysonMapping} Annotation
+	 * has been annotated with a {@link cmssi.lyson.annotation.LysonMapping} 
+	 * Annotation
 	 * 
 	 * @return mapping result Object
 	 */

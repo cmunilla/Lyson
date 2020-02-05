@@ -33,11 +33,11 @@
 	        <plugin>
 	          <artifactId>maven-compiler-plugin</artifactId>
 	          <version>3.8.0</version>
-	          <configuration>	  
+         	  <configuration>         		
 	          	<source>8</source>
 	            <target>8</target>
 	            <fork>true</fork>	
-	          </configuration> 
+         	  </configuration>
 	          <executions>
 	          	<execution>
 	          		<id>default-compile</id>
@@ -46,6 +46,9 @@
 	          		</goals>
 	          		<phase>compile</phase>
 	          		<configuration>
+			          	<source>8</source>
+			            <target>8</target>
+	            		<fork>true</fork>	
 	          			<includes>
 	          				<include>java/**/*.java</include>
 	          			</includes>
@@ -60,9 +63,6 @@
 	          		<configuration>
 	          			<release>9</release>
 	          			<multiReleaseOutput>true</multiReleaseOutput>
-	          			<compilerArgs>
-	          				<arg>-verbose</arg> 
-	          			</compilerArgs>
 	          			<includes>
 	          				<include>java-9/**/*.java</include>
 	          			</includes>
@@ -199,6 +199,37 @@
                        </dependency>
                    </dependencies>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+	          <artifactId>maven-javadoc-plugin</artifactId>
+	          <version>3.1.1</version>
+	          <executions>
+	            <execution>
+	              <id>attach-javadocs</id>
+	              <goals>
+	                <goal>jar</goal>
+	              </goals>
+	            </execution>
+	          </executions>
+	          <configuration>
+	          	<source>8</source>
+	            <sourcepath>${project.basedir}/src/main/java</sourcepath>
+	            <show>protected</show>
+	          </configuration>
+	        </plugin>
 		</plugins>
 	</build>
 	
