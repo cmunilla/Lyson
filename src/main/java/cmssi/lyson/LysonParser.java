@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 Christophe Munilla
+ * Copyright (c) 2019 - 2020  Christophe Munilla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -162,11 +162,10 @@ public class LysonParser {
     	if(s.indexOf('.') < 0) {
         	if (s.charAt(0) == '0') {
             	try {
-                    if (s.length() > 2 && (s.charAt(1) == 'x' || s.charAt(1) == 'X')) {                            
-                            num = Integer.parseInt(s.substring(2), 16);
-                    } else {
-                            num = Integer.parseInt(s, 8);
-                    }
+                    if (s.length() > 2 && (s.charAt(1) == 'x' || s.charAt(1) == 'X'))                             
+                        num = Integer.parseInt(s.substring(2), 16);
+                    else 
+                        num = Integer.parseInt(s, 8);                    
                     num = Integer.valueOf((int)num);
             	} catch(Exception ex ){
          			LOG.log(Level.FINEST, ex.getMessage(), ex);
@@ -312,10 +311,9 @@ public class LysonParser {
         parse(handler);
         return handler.valid();
     }
-    
-    /**
+
+    /* (non-Javadoc)
      * @return
-     * @throws LysonException
      */
     private ParsingEvent read() {
         char c = nextChar();
@@ -514,9 +512,8 @@ public class LysonParser {
     	return new ValuableEventWrapper(new IndexedEventWrapper(ev
             	).withIndex(index)).withValue(value);
     }
-    
-    /**
-     * @throws LysonException
+
+    /* (non-Javadoc)
      */
     private void checkClosingArray() {
         if (this.queue.isEmpty()) {
@@ -528,8 +525,7 @@ public class LysonParser {
         }
     }
 
-    /**
-     * @throws LysonException
+    /* (non-Javadoc)
      */
     private void checkClosingObject() {
         if (this.queue.isEmpty()) {
@@ -541,11 +537,12 @@ public class LysonParser {
         }
     }
 
-    /**
+    /* (non-Javadoc)
+     * 
      * @param c
      * @param path
+     * 
      * @return
-     * @throws LysonException
      */
     private ParsingEvent checkClosing(char c, String path) {
         LysonParsingEvent cc = null;
@@ -576,10 +573,12 @@ public class LysonParser {
         return cc.withPath(path);
     }
 
-    /**
+    /* (non-Javadoc)
+     * 
      * @param c
      * @param path
      * @param key
+     * 
      * @return
      */
     private ParsingEvent checkOpening(char c, String path, Object key) {
@@ -620,9 +619,8 @@ public class LysonParser {
         return o;
     }
 
-    /**
-     * @return
-     * @throws LysonException
+    /* (non-Javadoc)
+     * 
      */
     private char currentChar() {
     	if(pos >= length) {
@@ -644,13 +642,6 @@ public class LysonParser {
     }
 
     /* (non-Javadoc)
-     * 
-     * @return
-     * @throws LysonException
-     */
-    /* (non-Javadoc)
-     * 
-     * Makes the inner buffer cursor move  
      */
     private char nextChar() {
         for ( ; ; ) {
