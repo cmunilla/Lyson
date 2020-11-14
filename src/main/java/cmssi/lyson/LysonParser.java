@@ -367,6 +367,7 @@ public class LysonParser {
             case ParsingEvent.JSON_OBJECT_ITEM:
             case ParsingEvent.JSON_ARRAY_CLOSING:
             case ParsingEvent.JSON_ARRAY_ITEM:
+            	break;
             default:
                 break;
         }

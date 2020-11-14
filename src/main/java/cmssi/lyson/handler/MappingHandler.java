@@ -170,6 +170,7 @@ public class MappingHandler<T> implements LysonParserHandler {
 			case ParsingEvent.JSON_OBJECT_CLOSING:
 			case ParsingEvent.JSON_ARRAY_CLOSING:
 				closing = true;
+				break;
 			default:
 				break;
 		}		
