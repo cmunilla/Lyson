@@ -28,7 +28,7 @@ package cmssi.lyson.event;
  * interface
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public class ValuableEventWrapper  extends AbstractParsingEventWrapper implements ValuableEvent {
 

@@ -29,7 +29,7 @@ import cmssi.lyson.annotation.LysonMapping;
  * Hold the String prefix to be used in a mapping process
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public class MappingPrefix {
 	

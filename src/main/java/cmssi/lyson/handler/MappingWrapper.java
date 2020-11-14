@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * Wrapped the mapped Objects and offer an uniform access to them
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public class MappingWrapper<T> {
 	
@@ -76,11 +76,22 @@ public class MappingWrapper<T> {
 
 	/**
 	 * Constructor
+	 * 
+	 * @param handleIdentity defines whether JSON Object item key might be reused to assign
+	 * as identity to newly created complex data structure (Map, List) - For the specific 
+	 * case of List, the identity field will be the first List entry 
 	 */
-	public MappingWrapper(){
-		this.config = new MappingConfiguration<T>();
+	public MappingWrapper(boolean handleIdentity){
+		this.config = new MappingConfiguration<T>(handleIdentity);
 		this.mappeds = new LinkedList<>();
 		newMappedInstance();
+	}
+	
+	/**
+	 * Constructor
+	 */
+	public MappingWrapper(){
+		this(false);
 	}
 	
 	/**
@@ -93,11 +104,10 @@ public class MappingWrapper<T> {
 	}
 	
 	/**
-	 * Returns the mapping result object that can be a single 
-	 * instance of the mapped Type of this MappingWrapper, or 
-	 * a List of instances of the mapped type, if this last one
-	 * has been annotated with a {@link cmssi.lyson.annotation.LysonMapping} 
-	 * Annotation
+	 * Returns the mapping result object that can be a single instance of 
+	 * the mapped Type of this MappingWrapper, or a List of instances of the 
+	 * mapped type, if this last one has been annotated with a {@link 
+	 * cmssi.lyson.annotation.LysonMapping} Annotation
 	 * 
 	 * @return mapping result Object
 	 */
@@ -143,6 +153,5 @@ public class MappingWrapper<T> {
 			"Unable to create a new instance of the mapped type :%s",mappedType.getName()));
 		}
 		mappeds.addFirst(mapped);
-	}
-	
+	}	
 }

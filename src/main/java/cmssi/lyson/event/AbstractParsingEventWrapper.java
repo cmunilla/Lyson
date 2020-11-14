@@ -28,7 +28,7 @@ package cmssi.lyson.event;
  * interfaces
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public abstract class AbstractParsingEventWrapper implements ParsingEvent, ParsingEventWrapper {
 

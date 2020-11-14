@@ -34,7 +34,7 @@ import cmssi.lyson.exception.LysonParsingException;
  * a JSON chars sequence validation
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public class ValidationHandler implements LysonParserHandler {
 

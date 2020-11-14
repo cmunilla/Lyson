@@ -18,7 +18,6 @@ import org.junit.Test;
 
 import cmssi.lyson.LysonParser;
 import cmssi.lyson.event.ParsingEvent;
-import cmssi.lyson.handler.MappingHandler;
 
 public class TestMapping {
 
@@ -353,6 +352,98 @@ public class TestMapping {
 		assertEquals("val12",p.getKey1());
 		assertEquals("val202",p.getKey2());
 	}
+
+	@Test
+	public void testIdentityMappedMapping() {				
+		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}}";
+		MappingHandler<IdentityMapped> mapping = new MappingHandler<>(IdentityMapped.class);
+		new LysonParser(json).parse(mapping);	
+		IdentityMapped im = mapping.getMapped();
+		assertEquals("val1",im.getKey1());
+		assertEquals("val2",im.getKey2());
+		assertTrue(IdentitySubMapped.class.isAssignableFrom(im.getKey3().getClass()));
+		IdentitySubMapped ism = im.getKey3();
+		assertEquals("key3",ism.getName());
+		assertEquals(1 , ism.getSubKey1());
+		assertTrue(IdentitySubSubMapped.class.isAssignableFrom(ism.getSubKey2().getClass()));
+		IdentitySubSubMapped issm = ism.getSubKey2();
+		assertEquals("subkey2",issm.getName());
+		assertEquals("subsubvalue1",issm.getSubsubkey1());
+		assertEquals("subsubvalue2",issm.getSubsubkey2());
+	}
+
+	@Test
+	public void testIdentityMapMapping() {				
+		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}}";
+		MappingHandler<?> mapping = new MappingHandler<>(true);
+		new LysonParser(json).parse(mapping);	
+		Map im =  (Map)mapping.getMapped();
+		assertEquals("val1",im.get("key1"));
+		assertEquals("val2",im.get("key2"));
+		assertTrue(Map.class.isAssignableFrom(im.get("key3").getClass()));
+		Map ism = (Map) im.get("key3");
+		assertEquals("key3",ism.get("identity"));
+		assertEquals(1 , ism.get("subkey1"));
+		assertTrue(Map.class.isAssignableFrom(ism.get("subkey2").getClass()));
+		Map issm = (Map) ism.get("subkey2");
+		assertEquals("subkey2",issm.get("identity"));
+		assertEquals("subsubvalue1",issm.get("subsubkey1"));
+		assertEquals("subsubvalue2",issm.get("subsubkey2"));
+	}
+
+	@Test
+	public void testIdentityListMapping() {				
+		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":[\"subsubvalue1\",\"subsubvalue2\"]}}";
+		MappingHandler<?> mapping = new MappingHandler<>(true);
+		new LysonParser(json).parse(mapping);	
+		Map im =  (Map)mapping.getMapped();
+		assertEquals("val1",im.get("key1"));
+		assertEquals("val2",im.get("key2"));
+		assertTrue(Map.class.isAssignableFrom(im.get("key3").getClass()));
+		Map ism = (Map) im.get("key3");
+		assertEquals("key3",ism.get("identity"));
+		assertEquals(1 , ism.get("subkey1"));
+		assertTrue(List.class.isAssignableFrom(ism.get("subkey2").getClass()));
+		List issm = (List) ism.get("subkey2");
+		assertEquals("subkey2",issm.get(0));
+		assertEquals("subsubvalue1",issm.get(1));
+		assertEquals("subsubvalue2",issm.get(2));
+	}
+	
+	@Test
+	public void testImplicitMappedMapping() throws FileNotFoundException {
+		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":5}}";
+		MappingHandler<ImplicitMapped> mapping = new MappingHandler<>(ImplicitMapped.class);
+		new LysonParser(json).parse(mapping);	
+		ImplicitMapped im = mapping.getMapped();
+		assertEquals("val1",im.getKey1());
+		assertEquals("val2",im.getKey2());
+		assertTrue(Map.class.isAssignableFrom(im.getKey3().getClass()));
+		assertEquals(5,((Map)im.getKey3()).get("subkey2"));
+
+		MappingHandler<NoImplicitMapped> mapping2 = new MappingHandler<>(NoImplicitMapped.class);
+		new LysonParser(json).parse(mapping2);	
+		NoImplicitMapped im2 = mapping2.getMapped();
+		assertNull(im2.getKey1());
+		assertEquals("val2",im2.getKey2());
+		assertTrue(Map.class.isAssignableFrom(im2.getKey3().getClass()));
+		assertEquals(5,((Map)im2.getKey3()).get("subkey2"));
+	}
+	
+	@Test
+	public void testMultiIdentityMappedObject() throws FileNotFoundException {
+		MappingHandler<?> mapping = new MappingHandler<>(true);
+		new LysonParser(new FileInputStream(new File("src/test/resources/multirootobject.json"))).parse(mapping);		
+		Map m = mapping.getMapped();
+		assertEquals(12, m.size());
+		Map p = (Map) m.get("11");
+		assertTrue(Map.class.isAssignableFrom(p.get("key3").getClass()));
+		assertEquals(12,((Map)p.get("key3")).get("subkey1"));
+		assertEquals("11",p.get("identity"));
+		assertEquals("val12",p.get("key1"));
+		assertEquals("val202",p.get("key2"));
+	}
+	
 
 	@Test
 	public void testMultiMappedMappingRootObject() throws FileNotFoundException {

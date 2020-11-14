@@ -41,12 +41,14 @@ import cmssi.lyson.annotation.LysonMapping;
  * Configuration of a mapping process
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public class MappingConfiguration<T> {
 	
 	private static final Logger LOG = Logger.getLogger(MappingConfiguration.class.getName());
 
+	public static final String IDENTITY_MAPPING = "#IDENTITY#";
+	
 	//retrieve the targeted field name from the setter method name
 	private static String fieldNameFromSetterName(String methodName) {
 		String fieldName = methodName;
@@ -62,6 +64,7 @@ public class MappingConfiguration<T> {
 	
 	private MappingPrefix prefix;
 	
+	private boolean handleIdentity = false;
 	
 	/**
 	 * Constructor 
@@ -83,8 +86,20 @@ public class MappingConfiguration<T> {
 	 * Constructor
 	 */
 	public MappingConfiguration(){
+		this(false);
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param handleIdentity defines whether JSON Object item key might be reused to assign
+	 * as identity to newly created complex data structure (Map, List) - For the specific 
+	 * case of List, the identity field will be the first List entry 
+	 */
+	public MappingConfiguration(boolean handleIdentity){
 		this.prefix = new MappingPrefix();
 		this.mapping = Collections.synchronizedMap(Collections.emptyMap());
+		this.handleIdentity = handleIdentity;
 	}
 	
 	/**
@@ -120,20 +135,33 @@ public class MappingConfiguration<T> {
 		return this.prefix;
 	}	
 	
+	/**
+	 * Returns true if an JSON Object item event key might be reused to assign as identity to 
+	 * newly created complex data structure (Map, List, POJO). Returns false otherwise
+	 * 
+	 * @return true if an JSON Object item event'key might be reused to assign as identity; returns 
+	 * false otherwise
+	 */
+	public boolean handleIdentity() {
+		return this.handleIdentity;
+	}
+	
 	//Using @LysonMapping annotated fields and methods, build the Map whose key field is 
 	//the name or the path of the targeted LysonParsingEvent and whose value field is the 
 	//primitive or the JSON data structure attached to this last one
 	private void buildAnnotatedMapping() {	
+		LysonMapping typemapping = this.mappedType.getAnnotation(LysonMapping.class);
+		boolean implicit = typemapping!=null?typemapping.implicit():false;
 		Set<AccessibleObject> accessibles = new HashSet<>();
 		accessibles.addAll(Arrays.asList(this.mappedType.getDeclaredFields()));
 		accessibles.addAll(Arrays.asList(this.mappedType.getDeclaredMethods()));
 		accessibles.stream().forEach(f -> {
 		    LysonMapping lm = f.getAnnotation(LysonMapping.class);	
-		    if(lm == null) {
+		    if(!implicit && lm == null) {
 		    	return;
 		    }
-	    	String mappingName = lm.mapping();
-	    	if(mappingName.length() == 0) {
+	    	String mappingName = lm!=null?lm.mapping():null;
+	    	if(mappingName==null || mappingName.length() == 0) {
 	    		try {
 		    		mappingName = null;
 		    		if(f instanceof Field) {		    			
@@ -150,9 +178,10 @@ public class MappingConfiguration<T> {
 	    				LOG.log(Level.SEVERE,e.getMessage(),e);
 	    			}
 	    		}
-	    	}
+	    	}	    	
 	    	if(mappingName != null) {
-	    		mapping.put(mappingName, f);
+	    		this.handleIdentity = IDENTITY_MAPPING.equals(mappingName);
+	    		this.mapping.put(mappingName, f);
 	    	}
 		});
 	}

@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
 /**
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 @Documented
 @Retention(RUNTIME)
@@ -47,4 +47,13 @@ public @interface LysonMapping {
 	 * @return the target name or path
 	 */
 	String mapping() default "";
+	
+	/**
+	 * if used on a type it defines whether un-annotated fields are also handled by the 
+	 * mapping process or not
+	 * 
+	 * @return true if un-annotated fields are also handled by the mapping process;
+	 * false otherwise
+	 */
+	boolean implicit() default false;
 }

@@ -48,7 +48,7 @@ import cmssi.lyson.exception.LysonParsingException;
  * {@link LysonParserHandler} implementation dedicated to a JSON chars sequence mapping
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public class MappingHandler<T> implements LysonParserHandler {
 
@@ -80,6 +80,29 @@ public class MappingHandler<T> implements LysonParserHandler {
 	}
 	
 	/**
+	 * Constructor
+	 * 
+	 * @param handleIdentity defines whether JSON Object item key might be reused to assign
+	 * as identity to newly created complex data structure (Map, List) - For the specific 
+	 * case of List, the identity field will be the first List entry 
+	 */
+	//If no mapped type or instance is provided the JSON chars sequence will be 
+	//converted into Map or a List
+	public MappingHandler(boolean handleIdentity){
+		this.wrapper = new MappingWrapper<T>(handleIdentity);
+		this.stack.add(this.wrapper.mapped());
+	}
+	
+	/**
+	 * Constructor
+	 */
+	//If no mapped type or instance is provided the JSON chars sequence will be 
+	//converted into Map or a List
+	public MappingHandler(){
+		this(false);
+	}
+
+	/**
 	 * Returns true if the Stack of intermediate data structures kept
 	 * while parsing is not empty - Otherwise returns false
 	 * 
@@ -89,16 +112,6 @@ public class MappingHandler<T> implements LysonParserHandler {
 		return !stack.isEmpty();
 	}
 
-	/**
-	 * Constructor
-	 */
-	//If no mapped type or instance is provided the JSON chars sequence will be 
-	//converted into Map or a List
-	public MappingHandler(){
-		this.wrapper = new MappingWrapper<T>();
-		this.stack.add(this.wrapper.mapped());
-	}
-		
 	@Override
 	public boolean handle(ParsingEvent event) {
 		if(event == null) 
@@ -112,28 +125,30 @@ public class MappingHandler<T> implements LysonParserHandler {
 				
 		AccessibleObject ao = config.getMapping(key);
 		
-		if(ao == null) {
-			KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
-			if(kvwrapper!=null) {
+		String identity = null;
+		KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
+		if(kvwrapper!=null) {
+			if(ao == null) {
 				key = config.getPrefix().getSuffix(kvwrapper.getKey());
 				ao = config.getMapping(key);
 			}
+			identity = kvwrapper.getKey();
 		}
 		boolean opening = false;
 		boolean closing = false;
 		switch(event.getType()) {
 			case ParsingEvent.JSON_ARRAY_OPENING:
-				if(config.getPrefix().isPrefix(event.getPath())) 
+			case ParsingEvent.JSON_OBJECT_OPENING:	
+				Class<?> defaultType = event.getType()==ParsingEvent.JSON_ARRAY_OPENING?ArrayList.class: HashMap.class;
+				if(config.getPrefix().isPrefix(event.getPath())) {
 					this.wrapper.newMappedInstance();
-				else 
-					val = handleJsonOpening(ao,ArrayList.class);
-				opening = true;
-				break;
-			case ParsingEvent.JSON_OBJECT_OPENING:
-				if(config.getPrefix().isPrefix(event.getPath())) 
-					this.wrapper.newMappedInstance();
-				else 
-					val = handleJsonOpening(ao,HashMap.class);
+					if((!wrapper.getMappingConfiguration().getMappedType().isAssignableFrom(List.class) && 
+					    !wrapper.getMappingConfiguration().getMappedType().isAssignableFrom(Map.class)))
+						assignIdentityValue(this,identity);
+					else if(wrapper.getMappingConfiguration().handleIdentity())
+						assignIdentityValue(getMapped(),identity);
+				} else 
+					val = handleJsonOpening(ao, defaultType, identity);
 				opening = true;
 				break;
 			case ParsingEvent.JSON_ARRAY_ITEM:
@@ -205,12 +220,14 @@ public class MappingHandler<T> implements LysonParserHandler {
 	//According to the type of the JSON data structure opening event, and the type 
 	//of the Field of the mapped Object targeted by the ao AccessibleObject argument
 	//the assigned value is a Map, a List or the mapped Object of a sub MappingHandler
-	private Object handleJsonOpening(AccessibleObject ao, Class<?> defaultValueType) {
+	private Object handleJsonOpening(AccessibleObject ao, Class<?> defaultValueType, String identity) {
 		Object val = null;
 		Object stacked = null;
 		Object defaultValue = null;
 		try {
-			defaultValue = defaultValueType.getConstructor().newInstance();	
+			defaultValue = defaultValueType.getConstructor().newInstance();
+			if(wrapper.getMappingConfiguration().handleIdentity())
+				assignIdentityValue(defaultValue,identity);
 		} catch(ReflectiveOperationException e) {
 			if(LOG.isLoggable(Level.SEVERE))
 				LOG.log(Level.SEVERE, e.getMessage(), e);
@@ -234,7 +251,8 @@ public class MappingHandler<T> implements LysonParserHandler {
 			} else {
 				try {
 					MappingHandler sub = new MappingHandler(type);
-					val = sub.getMapped();	
+					assignIdentityValue(sub,identity);
+					val = sub.getMapped();
 					stacked = sub;
 				} catch(NullPointerException e) {
 					if(LOG.isLoggable(Level.SEVERE))
@@ -244,6 +262,34 @@ public class MappingHandler<T> implements LysonParserHandler {
 			assignValue(ao,val);
 		}
 		return stacked;
+	}
+	
+	//Assign identity
+	private void assignIdentityValue(Object obj, String identity) {
+		if(obj==null || identity == null)
+			return;
+		if(obj instanceof MappingHandler) {
+			AccessibleObject ao = ((MappingHandler<?>)obj).wrapper.getMappingConfiguration().getMapping(
+					MappingConfiguration.IDENTITY_MAPPING);
+			if(ao == null) 
+				return;			
+			try {
+				ao.setAccessible(true);
+				if(ao instanceof Field) {
+					Object typed = cast(((Field)ao).getType(),identity);
+					((Field)ao).set(((MappingHandler<?>)obj).wrapper.mapped() , typed);	
+				} else if(ao instanceof Method) {
+					Object typed = cast(((Method)ao).getParameterTypes()[0],identity);
+					((Method)ao).invoke(((MappingHandler<?>)obj).wrapper.mapped() , typed);	
+				}
+			} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+				if(LOG.isLoggable(Level.SEVERE))
+					LOG.log(Level.SEVERE,e.getMessage(),e);
+			}
+		} else if (obj instanceof List)
+			((List)obj).add(identity);
+		else if (obj instanceof Map)
+			((Map)obj).put("identity" , identity);
 	}
 	
 	//Define the val value Object of the appropriate field of 
@@ -268,7 +314,7 @@ public class MappingHandler<T> implements LysonParserHandler {
 		}
 	}
 	
-	//
+	//Cast helper method
 	private Object cast(Class<?> clazz, Object val) {
 		if(val == null) {
 			return null;

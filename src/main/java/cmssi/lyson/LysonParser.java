@@ -63,7 +63,7 @@ import cmssi.lyson.handler.ValidationHandler;
  * Lazy JSON Parser
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.4
+ * @version 0.5
  */
 public class LysonParser {
 
