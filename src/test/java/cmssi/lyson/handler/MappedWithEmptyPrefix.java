@@ -5,7 +5,7 @@ import java.util.Map;
 import cmssi.lyson.annotation.LysonMapping;
 
 @LysonMapping()
-public class MyEmptyAnnotatedTypeMapped {
+public class MappedWithEmptyPrefix {
 
 	private String key1;
 	
@@ -15,7 +15,7 @@ public class MyEmptyAnnotatedTypeMapped {
 	@LysonMapping
 	private Map key3;
 
-	public MyEmptyAnnotatedTypeMapped(){}
+	public MappedWithEmptyPrefix(){}
 	
 	@LysonMapping
 	public void setKey1(String key1) {

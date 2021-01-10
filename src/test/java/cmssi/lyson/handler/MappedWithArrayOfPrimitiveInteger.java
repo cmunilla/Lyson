@@ -1,20 +1,14 @@
 package cmssi.lyson.handler;
 
-import java.util.Map;
-
-import cmssi.lyson.annotation.LysonMapping;
-
-public class NoImplicitMapped {
+public class MappedWithArrayOfPrimitiveInteger {
 
 	private String key1;
 	
-	@LysonMapping
 	private String key2;
 			
-	@LysonMapping
-	private Map key3;
+	private int[] key3;
 
-	public NoImplicitMapped(){}
+	public MappedWithArrayOfPrimitiveInteger(){}
 	
 	public String  getKey1() {
 		return this.key1;
@@ -24,7 +18,7 @@ public class NoImplicitMapped {
 		return this.key2;
 	}
 	
-	public Map  getKey3() {
+	public int[]  getKey3() {
 		return this.key3;
 	}
 }

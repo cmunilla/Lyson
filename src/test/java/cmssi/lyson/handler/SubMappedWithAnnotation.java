@@ -6,7 +6,7 @@ import java.util.List;
 
 import cmssi.lyson.annotation.LysonMapping;
 
-public class MySubAnnotatedMapped {
+public class SubMappedWithAnnotation {
 
 	@LysonMapping(mapping="/key0/[0]")
 	private String key1;
@@ -45,7 +45,7 @@ public class MySubAnnotatedMapped {
 	private Long key12;
 	
 
-	public MySubAnnotatedMapped(){}
+	public SubMappedWithAnnotation(){}
 
 	public String  getKey1() {
 		return this.key1;

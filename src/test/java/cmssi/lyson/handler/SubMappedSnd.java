@@ -1,12 +1,12 @@
 package cmssi.lyson.handler;
 
-public class MySubSubMapped {
+public class SubMappedSnd {
 
 	private String subsubkey1;
 	
 	private String subsubkey2;
 			
-	public MySubSubMapped(){}
+	public SubMappedSnd(){}
 	
 	public String getSubsubkey1() {
 		return this.subsubkey1;

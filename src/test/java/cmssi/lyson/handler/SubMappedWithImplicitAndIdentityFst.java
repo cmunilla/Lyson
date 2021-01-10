@@ -1,24 +1,25 @@
 package cmssi.lyson.handler;
 
 import cmssi.lyson.annotation.LysonMapping;
+import cmssi.lyson.handler.mapping.MappingConfiguration;
 
 @LysonMapping(implicit=true)
-public class IdentitySubMapped {
+public class SubMappedWithImplicitAndIdentityFst {
 
 	@LysonMapping(mapping=MappingConfiguration.IDENTITY_MAPPING)
 	private String name;
 	
 	private int subkey1;
 	
-	private IdentitySubSubMapped subkey2;
+	private SubMappedSnd subkey2;
 			
-	public IdentitySubMapped(){}
+	public SubMappedWithImplicitAndIdentityFst(){}
 	
 	public int getSubKey1() {
 		return this.subkey1;
 	}
 	
-	public IdentitySubSubMapped getSubKey2() {
+	public SubMappedSnd getSubKey2() {
 		return this.subkey2;
 	}
 	

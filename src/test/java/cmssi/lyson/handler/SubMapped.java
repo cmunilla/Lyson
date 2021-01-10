@@ -1,18 +1,18 @@
 package cmssi.lyson.handler;
 
-public class MySubMapped {
+public class SubMapped {
 
 	private int subkey1;
 	
-	private MySubSubMapped subkey2;
+	private SubMappedSnd subkey2;
 			
-	public MySubMapped(){}
+	public SubMapped(){}
 	
 	public int getSubKey1() {
 		return this.subkey1;
 	}
 	
-	public MySubSubMapped getSubKey2() {
+	public SubMappedSnd getSubKey2() {
 		return this.subkey2;
 	}
 }

@@ -21,13 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.handler;
+package cmssi.lyson.handler.validation;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.exception.LysonParsingException;
+import cmssi.lyson.handler.LysonParserHandler;
 
 /**
  * {@link LysonParserHandler} implementation dedicated to 

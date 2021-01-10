@@ -1,16 +1,16 @@
 package cmssi.lyson.handler;
 
-import java.util.Map;
+import java.util.Queue;
 
-public class MyMapped {
+public class MappedWithQueueOfInteger {
 
 	private String key1;
 	
 	private String key2;
 			
-	private Map key3;
+	private Queue<Integer> key3;
 
-	public MyMapped(){}
+	public MappedWithQueueOfInteger(){}
 	
 	public String  getKey1() {
 		return this.key1;
@@ -20,7 +20,7 @@ public class MyMapped {
 		return this.key2;
 	}
 	
-	public Map  getKey3() {
+	public Queue<Integer>  getKey3() {
 		return this.key3;
 	}
 }

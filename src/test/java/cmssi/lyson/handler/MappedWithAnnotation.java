@@ -4,10 +4,10 @@ import java.util.Map;
 
 import cmssi.lyson.annotation.LysonMapping;
 
-public class MyAnnotatedMapped {
+public class MappedWithAnnotation {
 
 	@LysonMapping
-	private MySubAnnotatedMapped key0;
+	private SubMappedWithAnnotation key0;
 	
 	private String key1;
 	
@@ -53,7 +53,7 @@ public class MyAnnotatedMapped {
 	private double key15;
 
 	@LysonMapping
-	private Class<MyMapped> key16;
+	private Class<Mapped> key16;
 	
 	@LysonMapping
 	private Class<?> key17;
@@ -88,7 +88,7 @@ public class MyAnnotatedMapped {
 	@LysonMapping
 	private String key27;
 
-	public MyAnnotatedMapped(){}
+	public MappedWithAnnotation(){}
 
 	@LysonMapping
 	public void setKey1(String key1) {
@@ -100,7 +100,7 @@ public class MyAnnotatedMapped {
 		this.key3=key3;
 	}
 	
-	public MySubAnnotatedMapped getKey0(){
+	public SubMappedWithAnnotation getKey0(){
 		return this.key0;
 	}
 
@@ -164,7 +164,7 @@ public class MyAnnotatedMapped {
 		return this.key15;
 	}	
 	
-	public Class<MyMapped> getKey16() {
+	public Class<Mapped> getKey16() {
 		return this.key16;
 	}
 

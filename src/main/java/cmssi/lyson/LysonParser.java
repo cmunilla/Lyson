@@ -57,7 +57,7 @@ import cmssi.lyson.event.ValuableEventWrapper;
 import cmssi.lyson.exception.LysonException;
 import cmssi.lyson.exception.LysonParsingException;
 import cmssi.lyson.handler.LysonParserHandler;
-import cmssi.lyson.handler.ValidationHandler;
+import cmssi.lyson.handler.validation.ValidationHandler;
 
 /**
  * Lazy JSON Parser

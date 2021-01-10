@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.handler;
+package cmssi.lyson.handler.mapping;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
@@ -43,14 +43,14 @@ import cmssi.lyson.annotation.LysonMapping;
  * @author cmunilla@cmssi.fr
  * @version 0.5
  */
-public class MappingConfiguration<T> {
+public class MappingConfiguration {
 	
 	private static final Logger LOG = Logger.getLogger(MappingConfiguration.class.getName());
 
 	public static final String IDENTITY_MAPPING = "#IDENTITY#";
 	
 	//retrieve the targeted field name from the setter method name
-	private static String fieldNameFromSetterName(String methodName) {
+	protected static String fieldNameFromSetterName(String methodName) {
 		String fieldName = methodName;
 		//just translate uppercase letter to lowercase by adding 32
 		char c = (char)(((int)(fieldName.charAt(3)) + 32));
@@ -58,30 +58,47 @@ public class MappingConfiguration<T> {
 		return fieldName;
 	}
 	
-	private Map<String, AccessibleObject> mapping;	
-	
-	private Class<T> mappedType = null;
-	
+	private Map<String, AccessibleObject> mapping;		
 	private MappingPrefix prefix;
 	
-	private boolean handleIdentity = false;
+	private boolean handleIdentity = false;	
+	private MappingType mappingType = null;
+	private MappingBuilder mappingBuilder = null;
 	
 	/**
 	 * Constructor 
 	 * 
-	 * @param mappedType the type of the mapped value Object(s) 
-	 * wrapped by the MappingWrapper to be instantiated 
+	 * @param mappingType the {@link MappingType} wrapping the Java Type of 
+	 * the mapping type to be used
 	 */
-	public MappingConfiguration(Class<T> mappedType){
-		this.mappedType = mappedType;
-		this.prefix = new MappingPrefix(mappedType);
+	public MappingConfiguration(MappingType mappingType){
+		this.mappingType = mappingType;
+		if(this.mappingType.isPojoCollection())
+			this.prefix = new MappingPrefix(this.mappingType.getComponentType());
+		else
+			this.prefix = new MappingPrefix(this.mappingType.getMappedType());			
 		this.mapping = Collections.synchronizedMap(new HashMap<>());
 		buildAnnotatedMapping();		
-		if(this.mapping.isEmpty()) {
-			buildRawMapping();
-		}
+		if(this.mapping.isEmpty()) 
+			buildRawMapping();	
+		this.mappingBuilder = new MappingBuilder(this.mappingType);
 	}
-
+	
+	/**
+	 * Constructor
+	 * 
+	 * @param handleIdentity defines whether JSON Object item key might be reused to be assigned
+	 * as identity to newly created complex data structure  - For the specific case of a List, the 
+	 * identity field will be defined as the first item
+	 */
+	public MappingConfiguration(boolean handleIdentity){
+		this.mappingType = new MappingType(null);
+		this.prefix = new MappingPrefix(this.mappingType.getMappedType());		
+		this.mapping = Collections.synchronizedMap(Collections.emptyMap());
+		this.handleIdentity = handleIdentity;
+		this.mappingBuilder = new MappingBuilder(this.mappingType);
+	}
+	
 	/**
 	 * Constructor
 	 */
@@ -90,76 +107,61 @@ public class MappingConfiguration<T> {
 	}
 
 	/**
-	 * Constructor
+	 * Returns the {@link AccessibleObject} mapped to the String key passed as parameter 
 	 * 
-	 * @param handleIdentity defines whether JSON Object item key might be reused to assign
-	 * as identity to newly created complex data structure (Map, List) - For the specific 
-	 * case of List, the identity field will be the first List entry 
-	 */
-	public MappingConfiguration(boolean handleIdentity){
-		this.prefix = new MappingPrefix();
-		this.mapping = Collections.synchronizedMap(Collections.emptyMap());
-		this.handleIdentity = handleIdentity;
-	}
-	
-	/**
-	 * Returns the {@link AccessibleObject} mapped to the String 
-	 * key passed as parameter 
+	 * @param mapping the String key for which retrieving the mapped {@link AccessibleObject} if any
 	 * 
-	 * @param mapping the String key for which retrieving the mapped
-	 * {@link AccessibleObject} if any
-	 * 
-	 * @return the {@link AccessibleObject} mapped to the specified
-	 * String key if any - Null otherwise
+	 * @return the {@link AccessibleObject} mapped to the specified String key if any - Null otherwise
 	 */
 	public AccessibleObject getMapping(String mapping) {
 		return this.mapping.get(mapping);
 	}
 
 	/**
-	 * Returns the defined mapped Type of the mapping process
-	 * configured by this MappingConfiguration
+	 * Returns the {@link MappingBuilder} of this {@link MappingConfiguration}
 	 * 
-	 * @return this MappingConfiguration's mapped Type
+	 * @return this {@link MappingConfiguration}'s {@link MappingBuilder}
 	 */
-	public Class<T> getMappedType() {
-		return this.mappedType;
+	public MappingBuilder getMappingBuilder() {
+		return this.mappingBuilder;
 	}
 	
 	/**
-	 * Returns the {@link MappingPrefix} of this MappingConfiguration
+	 * Returns the {@link MappingPrefix} of this {@link MappingConfiguration}
 	 * 
-	 * @return this MappingConfiguration's {@link MappingPrefix}
+	 * @return this {@link MappingConfiguration}'s {@link MappingPrefix}
 	 */
 	public MappingPrefix getPrefix() {
 		return this.prefix;
 	}	
 	
 	/**
-	 * Returns true if an JSON Object item event key might be reused to assign as identity to 
-	 * newly created complex data structure (Map, List, POJO). Returns false otherwise
+	 * Returns true if an JSON Object item event key might be reused to be assigned as identity to 
+	 * newly created complex data structure. Returns false otherwise
 	 * 
-	 * @return true if an JSON Object item event'key might be reused to assign as identity; returns 
-	 * false otherwise
+	 * @return true if an JSON Object item event'key might be reused to be assigned as identity; 
+	 * returns false otherwise
 	 */
 	public boolean handleIdentity() {
 		return this.handleIdentity;
 	}
-	
-	//Using @LysonMapping annotated fields and methods, build the Map whose key field is 
-	//the name or the path of the targeted LysonParsingEvent and whose value field is the 
-	//primitive or the JSON data structure attached to this last one
+
+	//Using @LysonMapping annotated fields and methods, build the Map whose key field is the name or 
+	//the path of the targeted LysonParsingEvent and whose value field is the AccessibleObject (Field
+	//or Method) in the used mapping type
 	private void buildAnnotatedMapping() {	
-		LysonMapping typemapping = this.mappedType.getAnnotation(LysonMapping.class);
+		Class<?> annotatedClass = this.mappingType.isPojoCollection()?this.mappingType.getComponentType():this.mappingType.getMappedType();
+		LysonMapping typemapping = annotatedClass.getAnnotation(LysonMapping.class);
 		boolean implicit = typemapping!=null?typemapping.implicit():false;
+
 		Set<AccessibleObject> accessibles = new HashSet<>();
-		accessibles.addAll(Arrays.asList(this.mappedType.getDeclaredFields()));
-		accessibles.addAll(Arrays.asList(this.mappedType.getDeclaredMethods()));
+		accessibles.addAll(Arrays.asList(annotatedClass.getDeclaredFields()));
+		accessibles.addAll(Arrays.asList(annotatedClass.getDeclaredMethods()));
 		accessibles.stream().forEach(f -> {
 		    LysonMapping lm = f.getAnnotation(LysonMapping.class);	
-		    if(!implicit && lm == null) {
+		    if(!implicit && lm == null) 
 		    	return;
-		    }
+		    
 	    	String mappingName = lm!=null?lm.mapping():null;
 	    	if(mappingName==null || mappingName.length() == 0) {
 	    		try {
@@ -180,17 +182,19 @@ public class MappingConfiguration<T> {
 	    		}
 	    	}	    	
 	    	if(mappingName != null) {
-	    		this.handleIdentity = IDENTITY_MAPPING.equals(mappingName);
+	    		if(!this.handleIdentity)
+	    			this.handleIdentity = IDENTITY_MAPPING.equals(mappingName);
 	    		this.mapping.put(mappingName, f);
 	    	}
 		});
 	}
 
 	//Using all the fields, build the Map whose key field is the name or the path of 
-	//the targeted LysonParsingEvent and whose value field is the primitive or the JSON 
-	//data structure attached to this last one
+	//the targeted LysonParsingEvent and whose value field is the AccessibleObject (Field
+	//or Method) in the used mapping type
 	private void buildRawMapping() {
-		Arrays.stream(this.mappedType.getDeclaredFields()).forEach(f -> {
+		Class<?> targetClass = this.mappingType.isPojoCollection()?this.mappingType.getComponentType():this.mappingType.getMappedType();
+		Arrays.stream(targetClass.getDeclaredFields()).forEach(f -> {
 	    	mapping.put(f.getName(), f);
 		});
 	}

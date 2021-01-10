@@ -5,7 +5,7 @@ import java.util.Map;
 import cmssi.lyson.annotation.LysonMapping;
 
 @LysonMapping(mapping="/[2]/*")
-public class MyOtherAnnotatedTypeMapped {
+public class MappedWithPrefix2 {
 
 	private String key1;
 	
@@ -15,7 +15,7 @@ public class MyOtherAnnotatedTypeMapped {
 	@LysonMapping
 	private Map key3;
 
-	public MyOtherAnnotatedTypeMapped(){}
+	public MappedWithPrefix2(){}
 	
 	@LysonMapping
 	public void setKey1(String key1) {

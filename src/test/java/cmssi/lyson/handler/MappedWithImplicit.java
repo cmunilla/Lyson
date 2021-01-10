@@ -5,7 +5,7 @@ import java.util.Map;
 import cmssi.lyson.annotation.LysonMapping;
 
 @LysonMapping(implicit=true)
-public class ImplicitMapped {
+public class MappedWithImplicit {
 
 	private String key1;
 	
@@ -15,7 +15,7 @@ public class ImplicitMapped {
 	@LysonMapping
 	private Map key3;
 
-	public ImplicitMapped(){}
+	public MappedWithImplicit(){}
 	
 	public String  getKey1() {
 		return this.key1;

@@ -9,8 +9,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Dictionary;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,13 +22,14 @@ import org.junit.Test;
 
 import cmssi.lyson.LysonParser;
 import cmssi.lyson.event.ParsingEvent;
+import cmssi.lyson.handler.mapping.MappingHandler;
 
 public class TestMapping {
 
 	@Test
 	public void testMyAnnotatedMappedMappingJSON() {
 		Logger.getLogger(MappingHandler.class.getName()).setLevel(Level.FINEST);
-		MappingHandler<MyAnnotatedMapped> mapping = new MappingHandler<>(MyAnnotatedMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithAnnotation.class);
 		new LysonParser("{"
 		+ "\"key0\":[\"fst\", 0.55, \"array\",[8,2,1,{\"thd\" => \"more\"}], true, 1.225544, 1000789446512301, 44.2222222222222222228,5,1024,65535,45654654654654],"
 		+ "\"key1\":\"IT IS KEY ONE\\b\","
@@ -42,8 +47,8 @@ public class TestMapping {
 		+ "\"key13\":  "+String.valueOf(Long.MAX_VALUE-1)+","
 		+ "\"key14\":  "+String.valueOf(Float.MAX_VALUE-1)+","
 		+ "\"key15\":  "+String.valueOf(Double.MAX_VALUE-1)+","
-		+ "\"key16\": \"cmssi.lyson.handler.MyMapped\","
-		+ "\"key17\": \"cmssi.lyson.handler.MyMapped3\","
+		+ "\"key16\": \"cmssi.lyson.handler.Mapped\","
+		+ "\"key17\": \"cmssi.lyson.handler.Mapped2\","
 		+ "\"key18\": 128,"
 		+ "\"key19\": \"true\","
 		+ "\"key20\": \"null\","
@@ -55,7 +60,7 @@ public class TestMapping {
 		+ "\"key26\": 44,"
 		+ "\"key27\": null}"
 		).parse(mapping);		
-		MyAnnotatedMapped m = mapping.getMapped();
+		MappedWithAnnotation m = mapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(m.getKey3().getClass()));
 		assertEquals("fst", m.getKey0().getKey1());
 		assertEquals(0.55f, m.getKey0().getKey2(),0);
@@ -85,7 +90,7 @@ public class TestMapping {
 		assertEquals(((long)Long.MAX_VALUE-1) ,m.getKey13());
 		assertEquals(((float)Float.MAX_VALUE-1) ,m.getKey14(),0);
 		assertEquals(((double)Double.MAX_VALUE-1) ,m.getKey15(),0);
-		assertEquals(MyMapped.class,m.getKey16());
+		assertEquals(Mapped.class,m.getKey16());
 		assertEquals(null,m.getKey17());
 		assertEquals(Character.valueOf(((char)128)),m.getKey18());
 		assertEquals(Boolean.valueOf(true),m.getKey19());
@@ -101,16 +106,16 @@ public class TestMapping {
 
 	@Test
 	public void testMultiMapped() {
-		MappingHandler<MyMapped> myMappedMapping = new MappingHandler<>(MyMapped.class);
+		MappingHandler myMappedMapping = new MappingHandler(Mapped.class);
 		MappingHandler rawMapping = new MappingHandler();
-		MappingHandler<MyOtherAnnotatedMapped> myOtherAnnotatedMappedMapping = new MappingHandler<>(MyOtherAnnotatedMapped.class);
-		MappingHandler<MyMapped2> myMapped2Mapping = new MappingHandler<>(MyMapped2.class);
+		MappingHandler myOtherAnnotatedMappedMapping = new MappingHandler(MappedWithAnnotation2.class);
+		MappingHandler myMapped2Mapping = new MappingHandler(MappedWithSubMapped.class);
 		
 		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":{\"fst\": 0.55,\"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\"},\"key2\":\"3\"}"
 			).parse(
 			myMappedMapping,
 			rawMapping,
-			new MappingHandler<Object>() {
+			new MappingHandler() {
 				private int count = 0;
 				@Override
 				public boolean handle(ParsingEvent event) {
@@ -122,7 +127,7 @@ public class TestMapping {
 			},
 			myOtherAnnotatedMappedMapping,
 			myMapped2Mapping,
-			new MappingHandler<Object>() {
+			new MappingHandler() {
 				private int count = 0;
 				@Override
 				public boolean handle(ParsingEvent event) {
@@ -133,12 +138,12 @@ public class TestMapping {
 				}
 			});	
 	
-		MyMapped2 m = myMapped2Mapping.getMapped();
+		MappedWithSubMapped m = myMapped2Mapping.getMapped();
 		assertEquals("IT IS KEY ONE\b",m.getKey1());
 		assertEquals("3",m.getKey2());
-		assertEquals(MySubMapped.class,m.getKey3().getClass());
-		assertEquals(0,((MySubMapped)m.getKey3()).getSubKey1());
-		assertNull(((MySubMapped)m.getKey3()).getSubKey2());
+		assertEquals(SubMapped.class,m.getKey3().getClass());
+		assertEquals(0,((SubMapped)m.getKey3()).getSubKey1());
+		assertNull(((SubMapped)m.getKey3()).getSubKey2());
 		
 		Map l = (Map) rawMapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(l.get("key3").getClass()));
@@ -146,12 +151,12 @@ public class TestMapping {
 		assertEquals("IT IS KEY ONE\b",l.get("key1"));
 		assertEquals("3",l.get("key2"));	
 		
-		MyOtherAnnotatedMapped v = myOtherAnnotatedMappedMapping.getMapped();
+		MappedWithAnnotation2 v = myOtherAnnotatedMappedMapping.getMapped();
 		assertEquals(8,v.getKey3());
 		assertEquals("IT IS KEY ONE\b",v.getKey2());
 		assertEquals("3",v.getKey1());
 		
-		MyMapped w = myMappedMapping.getMapped();
+		Mapped w = myMappedMapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(w.getKey3().getClass()));
 		assertTrue(List.class.isAssignableFrom(w.getKey3().get("array").getClass()));
 		assertEquals("IT IS KEY ONE\b",w.getKey1());
@@ -160,12 +165,74 @@ public class TestMapping {
 	
 	@Test
 	public void testMyMappedMappingJSON() {
-		MappingHandler<MyMapped> mapping = new MappingHandler<>(MyMapped.class);
+		MappingHandler mapping = new MappingHandler(Mapped.class);
 		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":{\"fst\": 0.55,\"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\"},\"key2\":\"3\"}"
 				).parse(mapping);		
-		MyMapped m = mapping.getMapped();
+		Mapped m = mapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(m.getKey3().getClass()));
 		assertTrue(List.class.isAssignableFrom(m.getKey3().get("array").getClass()));
+		assertEquals("IT IS KEY ONE\b",m.getKey1());
+		assertEquals("3",m.getKey2());
+	}
+	
+	@Test
+	public void testMyMappedWithIntegerQueue() {
+		MappingHandler mapping = new MappingHandler(MappedWithQueueOfInteger.class);
+		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":[2,8,9,7,6],\"key2\":\"3\"}"
+				).parse(mapping);		
+		MappedWithQueueOfInteger m = mapping.getMapped();
+		assertTrue(Queue.class.isAssignableFrom(m.getKey3().getClass()));
+		int[] queue = new int[] {2,8,9,7,6};
+		int pos=0;
+		for(Iterator it =((Queue)m.getKey3()).iterator();it.hasNext();)
+			assertEquals(queue[pos++],it.next());
+		assertEquals("IT IS KEY ONE\b",m.getKey1());
+		assertEquals("3",m.getKey2());
+	}
+
+	@Test
+	public void testMyMappedWithIntegerVector() {
+		MappingHandler mapping = new MappingHandler(MappedWithVectorOfInteger.class);
+		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":[2,8,9,7,6],\"key2\":\"3\"}"
+				).parse(mapping);		
+		MappedWithVectorOfInteger m = mapping.getMapped();
+		assertTrue(Vector.class.isAssignableFrom(m.getKey3().getClass()));
+		int[] queue = new int[] {2,8,9,7,6};
+		int pos=0;
+		for(Iterator it =((Vector)m.getKey3()).iterator();it.hasNext();)
+			assertEquals(queue[pos++],it.next());
+		assertEquals("IT IS KEY ONE\b",m.getKey1());
+		assertEquals("3",m.getKey2());
+	}
+	
+	@Test
+	public void testMyMappedWithIntegerArray() {
+		MappingHandler mapping = new MappingHandler(MappedWithArrayOfInteger.class);
+		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":[2,8,9,7,6],\"key2\":\"3\"}"
+				).parse(mapping);		
+		MappedWithArrayOfInteger m = mapping.getMapped();
+		assertTrue(m.getKey3().getClass().isArray());
+		assertEquals(Integer.class, m.getKey3().getClass().getComponentType());
+		int[] queue = new int[] {2,8,9,7,6};
+		int pos=0;
+		for(int i = 0;i < m.getKey3().length;i++)
+			assertEquals(Integer.valueOf(queue[pos++]),m.getKey3()[i]);
+		assertEquals("IT IS KEY ONE\b",m.getKey1());
+		assertEquals("3",m.getKey2());
+	}
+
+	@Test
+	public void testMyMappedWithPrimitveIntegerArray() {
+		MappingHandler mapping = new MappingHandler(MappedWithArrayOfPrimitiveInteger.class);
+		new LysonParser("{\"key1\":\"IT IS KEY ONE\\b\",\"key3\":[2,8,9,7,6],\"key2\":\"3\"}"
+				).parse(mapping);		
+		MappedWithArrayOfPrimitiveInteger m = mapping.getMapped();
+		assertTrue(m.getKey3().getClass().isArray());
+		assertEquals(int.class, m.getKey3().getClass().getComponentType());
+		int[] queue = new int[] {2,8,9,7,6};
+		int pos=0;
+		for(int i = 0;i < m.getKey3().length;i++)
+			assertEquals(queue[pos++],m.getKey3()[i]);
 		assertEquals("IT IS KEY ONE\b",m.getKey1());
 		assertEquals("3",m.getKey2());
 	}
@@ -184,10 +251,10 @@ public class TestMapping {
 
 	@Test
 	public void testMyOtherMappedMappingJSON() {
-		MappingHandler<MyOtherAnnotatedMapped> mapping = new MappingHandler<>(MyOtherAnnotatedMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithAnnotation2.class);
 		new LysonParser("{\"key1\":\"IT IS KEY ONE\\f\",\"key3\":{\"fst\": 005,\"array\":[8,2,1,{\"thd\" => \"mor\\u00C8\"}],\"snd\":\"another\"},\"key2\":\"3\"}"
 				).parse(mapping);		
-		MyOtherAnnotatedMapped m = mapping.getMapped();
+		MappedWithAnnotation2 m = mapping.getMapped();
 		assertEquals(8,m.getKey3());
 		assertEquals("IT IS KEY ONE\f",m.getKey2());
 		assertEquals("3",m.getKey1());
@@ -195,16 +262,16 @@ public class TestMapping {
 	
 	@Test
 	public void testSubMapping() {
-		MappingHandler<MyMapped2> mapping = new MappingHandler<>(MyMapped2.class);
+		MappingHandler mapping = new MappingHandler(MappedWithSubMapped.class);
 		new LysonParser("{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}}").parse(mapping);
-		MyMapped2 m = mapping.getMapped();
+		MappedWithSubMapped m = mapping.getMapped();
 		assertEquals("val1",m.getKey1());
 		assertEquals("val2",m.getKey2());
-		assertEquals(MySubMapped.class,m.getKey3().getClass());
-		assertEquals(1,((MySubMapped)m.getKey3()).getSubKey1());
-		assertEquals(MySubSubMapped.class,((MySubMapped)m.getKey3()).getSubKey2().getClass());
-		assertEquals("subsubvalue1",((MySubSubMapped)((MySubMapped)m.getKey3()).getSubKey2()).getSubsubkey1());
-		assertEquals("subsubvalue2",((MySubSubMapped)((MySubMapped)m.getKey3()).getSubKey2()).getSubsubkey2());
+		assertEquals(SubMapped.class,m.getKey3().getClass());
+		assertEquals(1,((SubMapped)m.getKey3()).getSubKey1());
+		assertEquals(SubMappedSnd.class,((SubMapped)m.getKey3()).getSubKey2().getClass());
+		assertEquals("subsubvalue1",((SubMappedSnd)((SubMapped)m.getKey3()).getSubKey2()).getSubsubkey1());
+		assertEquals("subsubvalue2",((SubMappedSnd)((SubMapped)m.getKey3()).getSubKey2()).getSubsubkey2());
 	}	
 	
 	@Test
@@ -221,11 +288,11 @@ public class TestMapping {
 
 	@Test
 	public void testMyOtherMappedInstantiatedMappingJSON() {
-		MyOtherAnnotatedMapped mapped = new MyOtherAnnotatedMapped();
-		MappingHandler<MyOtherAnnotatedMapped> mapping = new MappingHandler<>(mapped);
+		MappedWithAnnotation2 mapped = new MappedWithAnnotation2();
+		MappingHandler mapping = new MappingHandler(mapped);
 		new LysonParser("{\"key1\":\"IT IS KEY ONE\\t\",\"key3\":{\"fst\": 0.555555555555,\"array\":[8,2,1,{\"thd\" => \"more\"}],\"snd\":\"another\"},\"key2\":\"3\\\"\"}"
 				).parse(mapping);		
-		MyOtherAnnotatedMapped m = mapping.getMapped();
+		MappedWithAnnotation2 m = mapping.getMapped();
 		assertEquals(mapped, m);
 		assertEquals(8,m.getKey3());
 		assertEquals("IT IS KEY ONE\t",m.getKey2());
@@ -254,9 +321,9 @@ public class TestMapping {
 
 	@Test
 	public void testMultiMappedEmptyMappingRootArray() throws FileNotFoundException {
-		MappingHandler<MyEmptyAnnotatedTypeMapped> mapping = new MappingHandler<>(MyEmptyAnnotatedTypeMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithEmptyPrefix.class);
 		new LysonParser(new FileInputStream(new File("src/test/resources/multirootarray.json"))).parse(mapping);		
-		MyEmptyAnnotatedTypeMapped m = mapping.getMapped();
+		MappedWithEmptyPrefix m = mapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(m.getKey3().getClass()));
 		assertEquals(12,((Map)m.getKey3()).get("subkey1"));
 		assertEquals("val12",m.getKey1());
@@ -265,9 +332,9 @@ public class TestMapping {
 
 	@Test
 	public void testMultiMappedEmptyMappingRootObject() throws FileNotFoundException {
-		MappingHandler<MyEmptyAnnotatedTypeMapped> mapping = new MappingHandler<>(MyEmptyAnnotatedTypeMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithEmptyPrefix.class);
 		new LysonParser(new FileInputStream(new File("src/test/resources/multirootobject.json"))).parse(mapping);		
-		MyEmptyAnnotatedTypeMapped m = mapping.getMapped();
+		MappedWithEmptyPrefix m = mapping.getMapped();
 		assertTrue(Map.class.isAssignableFrom(m.getKey3().getClass()));
 		assertEquals(12,((Map)m.getKey3()).get("subkey1"));
 		assertEquals("val12",m.getKey1());
@@ -276,11 +343,11 @@ public class TestMapping {
 
 	@Test
 	public void testMultiMappedMappingRootArray() throws FileNotFoundException {
-		MappingHandler<MyAnnotatedTypeMapped> mapping = new MappingHandler<MyAnnotatedTypeMapped>(MyAnnotatedTypeMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithPrefix.class);
 		new LysonParser(new FileInputStream(new File("src/test/resources/multirootarray.json"))).parse(mapping);		
-		List<MyAnnotatedTypeMapped> m = mapping.getMapped();
+		List<MappedWithPrefix> m = mapping.getMapped();
 		assertEquals(12, m.size());
-		MyAnnotatedTypeMapped p = m.get(11);
+		MappedWithPrefix p = m.get(11);
 		assertTrue(Map.class.isAssignableFrom(p.getKey3().getClass()));
 		assertEquals(1,((Map)p.getKey3()).get("subkey1"));
 		assertEquals("val1",p.getKey1());
@@ -356,17 +423,17 @@ public class TestMapping {
 	@Test
 	public void testIdentityMappedMapping() {				
 		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}}";
-		MappingHandler<IdentityMapped> mapping = new MappingHandler<>(IdentityMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithSubMappedIdentity.class);
 		new LysonParser(json).parse(mapping);	
-		IdentityMapped im = mapping.getMapped();
+		MappedWithSubMappedIdentity im = mapping.getMapped();
 		assertEquals("val1",im.getKey1());
 		assertEquals("val2",im.getKey2());
-		assertTrue(IdentitySubMapped.class.isAssignableFrom(im.getKey3().getClass()));
-		IdentitySubMapped ism = im.getKey3();
+		assertTrue(SubMappedWithImplicitAndIdentitySnd.class.isAssignableFrom(im.getKey3().getClass()));
+		SubMappedWithImplicitAndIdentitySnd ism = im.getKey3();
 		assertEquals("key3",ism.getName());
 		assertEquals(1 , ism.getSubKey1());
-		assertTrue(IdentitySubSubMapped.class.isAssignableFrom(ism.getSubKey2().getClass()));
-		IdentitySubSubMapped issm = ism.getSubKey2();
+		assertTrue(SubMappedWithImplicitAndIdentityThd.class.isAssignableFrom(ism.getSubKey2().getClass()));
+		SubMappedWithImplicitAndIdentityThd issm = ism.getSubKey2();
 		assertEquals("subkey2",issm.getName());
 		assertEquals("subsubvalue1",issm.getSubsubkey1());
 		assertEquals("subsubvalue2",issm.getSubsubkey2());
@@ -375,7 +442,7 @@ public class TestMapping {
 	@Test
 	public void testIdentityMapMapping() {				
 		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}}";
-		MappingHandler<?> mapping = new MappingHandler<>(true);
+		MappingHandler mapping = new MappingHandler(true);
 		new LysonParser(json).parse(mapping);	
 		Map im =  (Map)mapping.getMapped();
 		assertEquals("val1",im.get("key1"));
@@ -394,7 +461,7 @@ public class TestMapping {
 	@Test
 	public void testIdentityListMapping() {				
 		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":[\"subsubvalue1\",\"subsubvalue2\"]}}";
-		MappingHandler<?> mapping = new MappingHandler<>(true);
+		MappingHandler mapping = new MappingHandler(true);
 		new LysonParser(json).parse(mapping);	
 		Map im =  (Map)mapping.getMapped();
 		assertEquals("val1",im.get("key1"));
@@ -405,25 +472,24 @@ public class TestMapping {
 		assertEquals(1 , ism.get("subkey1"));
 		assertTrue(List.class.isAssignableFrom(ism.get("subkey2").getClass()));
 		List issm = (List) ism.get("subkey2");
-		assertEquals("subkey2",issm.get(0));
-		assertEquals("subsubvalue1",issm.get(1));
-		assertEquals("subsubvalue2",issm.get(2));
+		assertEquals("subsubvalue1",issm.get(0));
+		assertEquals("subsubvalue2",issm.get(1));
 	}
 	
 	@Test
 	public void testImplicitMappedMapping() throws FileNotFoundException {
 		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":5}}";
-		MappingHandler<ImplicitMapped> mapping = new MappingHandler<>(ImplicitMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithImplicit.class);
 		new LysonParser(json).parse(mapping);	
-		ImplicitMapped im = mapping.getMapped();
+		MappedWithImplicit im = mapping.getMapped();
 		assertEquals("val1",im.getKey1());
 		assertEquals("val2",im.getKey2());
 		assertTrue(Map.class.isAssignableFrom(im.getKey3().getClass()));
 		assertEquals(5,((Map)im.getKey3()).get("subkey2"));
 
-		MappingHandler<NoImplicitMapped> mapping2 = new MappingHandler<>(NoImplicitMapped.class);
+		MappingHandler mapping2 = new MappingHandler(MappedWithoutImplicit.class);
 		new LysonParser(json).parse(mapping2);	
-		NoImplicitMapped im2 = mapping2.getMapped();
+		MappedWithoutImplicit im2 = mapping2.getMapped();
 		assertNull(im2.getKey1());
 		assertEquals("val2",im2.getKey2());
 		assertTrue(Map.class.isAssignableFrom(im2.getKey3().getClass()));
@@ -432,7 +498,7 @@ public class TestMapping {
 	
 	@Test
 	public void testMultiIdentityMappedObject() throws FileNotFoundException {
-		MappingHandler<?> mapping = new MappingHandler<>(true);
+		MappingHandler mapping = new MappingHandler(true);
 		new LysonParser(new FileInputStream(new File("src/test/resources/multirootobject.json"))).parse(mapping);		
 		Map m = mapping.getMapped();
 		assertEquals(12, m.size());
@@ -443,15 +509,96 @@ public class TestMapping {
 		assertEquals("val12",p.get("key1"));
 		assertEquals("val202",p.get("key2"));
 	}
-	
 
 	@Test
+	public void testListSubMappedMapping() {
+		MappingHandler mapping = new MappingHandler(MappedWithListOfSubMapped.class);
+		new LysonParser("{\"key1\":\"val1\",\"key2\":\"val2\","
+				+ "\"key3\":["
+				+ "{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "{\"subkey1\":2,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "{\"subkey1\":3,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}"
+				+ "]}"
+		).parse(mapping);
+		MappedWithListOfSubMapped m = mapping.getMapped();
+		assertEquals("val1",m.getKey1());
+		assertEquals("val2",m.getKey2());
+		assertTrue(List.class.isAssignableFrom(m.getKey3().getClass()));
+		assertTrue(SubMapped.class.isAssignableFrom(m.getKey3().get(0).getClass()));
+		assertEquals(1,m.getKey3().get(0).getSubKey1());
+		assertEquals(2,m.getKey3().get(1).getSubKey1());
+		assertEquals(3,m.getKey3().get(2).getSubKey1());
+	}	
+
+	@Test
+	public void testArraySubMappedMapping() {
+		MappingHandler mapping = new MappingHandler(MappedWithArrayOfSubMapped.class);
+		new LysonParser("{\"key1\":\"val1\",\"key2\":\"val2\","
+				+ "\"key3\":["
+				+ "{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "{\"subkey1\":2,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "{\"subkey1\":3,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}"
+				+ "]}"
+		).parse(mapping);
+		MappedWithArrayOfSubMapped m = mapping.getMapped();
+		assertEquals("val1",m.getKey1());
+		assertEquals("val2",m.getKey2());
+		assertTrue(m.getKey3().getClass().isArray());
+		assertTrue(SubMapped[].class.isAssignableFrom(m.getKey3().getClass()));
+		assertEquals(1,m.getKey3()[0].getSubKey1());
+		assertEquals(2,m.getKey3()[1].getSubKey1());
+		assertEquals(3,m.getKey3()[2].getSubKey1());
+	}	
+
+	@Test
+	public void testMapSubMappedMapping() {
+		MappingHandler mapping = new MappingHandler(MappedWithMapOfSubMapped.class);
+		new LysonParser("{\"key1\":\"val1\",\"key2\":\"val2\","
+				+ "\"key3\":{"
+				+ "\"subone\":{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "\"subtwo\":{\"subkey1\":2,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "\"subthree\":{\"subkey1\":3,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}"
+				+ "}"
+				+ "}"
+		).parse(mapping);
+		MappedWithMapOfSubMapped m = mapping.getMapped();
+		assertEquals("val1",m.getKey1());
+		assertEquals("val2",m.getKey2());
+		assertTrue(Map.class.isAssignableFrom(m.getKey3().getClass()));
+		assertTrue(SubMappedWithImplicitAndIdentityFst.class.isAssignableFrom(m.getKey3().get("subone").getClass()));
+		assertEquals(1,m.getKey3().get("subone").getSubKey1());
+		assertEquals(2,m.getKey3().get("subtwo").getSubKey1());
+		assertEquals(3,m.getKey3().get("subthree").getSubKey1());
+	}	
+
+	@Test
+	public void testDictionarySubMappedMapping() {
+		MappingHandler mapping = new MappingHandler(MappedWithDictionaryOfSubMapped.class);
+		new LysonParser("{\"key1\":\"val1\",\"key2\":\"val2\","
+				+ "\"key3\":{"
+				+ "\"subone\":{\"subkey1\":1,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "\"subtwo\":{\"subkey1\":2,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}},"
+				+ "\"subthree\":{\"subkey1\":3,\"subkey2\":{\"subsubkey1\":\"subsubvalue1\",\"subsubkey2\":\"subsubvalue2\"}}"
+				+ "}"
+				+ "}"
+		).parse(mapping);
+		MappedWithDictionaryOfSubMapped m = mapping.getMapped();
+		assertEquals("val1",m.getKey1());
+		assertEquals("val2",m.getKey2());
+		assertTrue(Dictionary.class.isAssignableFrom(m.getKey3().getClass()));
+		assertTrue(SubMappedWithImplicitAndIdentityFst.class.isAssignableFrom(m.getKey3().get("subone").getClass()));
+		assertEquals(1,m.getKey3().get("subone").getSubKey1());
+		assertEquals(2,m.getKey3().get("subtwo").getSubKey1());
+		assertEquals(3,m.getKey3().get("subthree").getSubKey1());
+	}	
+	
+	@Test
 	public void testMultiMappedMappingRootObject() throws FileNotFoundException {
-		MappingHandler<MyAnnotatedTypeMapped> mapping = new MappingHandler<>(MyAnnotatedTypeMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithPrefix.class);
 		new LysonParser(new FileInputStream(new File("src/test/resources/multirootobject.json"))).parse(mapping);		
-		List<MyAnnotatedTypeMapped> m = mapping.getMapped();
+		List<MappedWithPrefix> m = mapping.getMapped();
 		assertEquals(12, m.size());
-		MyAnnotatedTypeMapped p = m.get(11);
+		MappedWithPrefix p = m.get(11);
 		assertTrue(Map.class.isAssignableFrom(p.getKey3().getClass()));
 		assertEquals(1,((Map)p.getKey3()).get("subkey1"));
 		assertEquals("val1",p.getKey1());
@@ -526,11 +673,11 @@ public class TestMapping {
 
 	@Test
 	public void testMultiMappedMappingArray() throws FileNotFoundException {
-		MappingHandler<MyOtherAnnotatedTypeMapped> mapping = new MappingHandler<>(MyOtherAnnotatedTypeMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithPrefix2.class);
 		new LysonParser(new FileInputStream(new File("src/test/resources/multiarray.json"))).parse(mapping);		
-		List<MyOtherAnnotatedTypeMapped> m = mapping.getMapped();
+		List<MappedWithPrefix2> m = mapping.getMapped();
 		assertEquals(12, m.size());
-		MyOtherAnnotatedTypeMapped p = m.get(11);
+		MappedWithPrefix2 p = m.get(11);
 		assertTrue(Map.class.isAssignableFrom(p.getKey3().getClass()));
 		assertEquals(1,((Map)p.getKey3()).get("subkey1"));
 		assertEquals("val1",p.getKey1());
@@ -605,11 +752,11 @@ public class TestMapping {
 	
 	@Test
 	public void testMultiMappedMappingObject() throws FileNotFoundException {
-		MappingHandler<MyOtherAnnotatedTypeMapped> mapping = new MappingHandler<>(MyOtherAnnotatedTypeMapped.class);
+		MappingHandler mapping = new MappingHandler(MappedWithPrefix2.class);
 		new LysonParser(new FileInputStream(new File("src/test/resources/multiobject.json"))).parse(mapping);		
-		List<MyOtherAnnotatedTypeMapped> m = mapping.getMapped();
+		List<MappedWithPrefix2> m = mapping.getMapped();
 		assertEquals(12, m.size());
-		MyOtherAnnotatedTypeMapped p = m.get(11);
+		MappedWithPrefix2 p = m.get(11);
 		assertTrue(Map.class.isAssignableFrom(p.getKey3().getClass()));
 		assertEquals(1,((Map)p.getKey3()).get("subkey1"));
 		assertEquals("val1",p.getKey1());

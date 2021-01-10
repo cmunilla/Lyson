@@ -11,6 +11,7 @@ import org.junit.Test;
 import cmssi.lyson.LysonParser;
 import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.exception.LysonParsingException;
+import cmssi.lyson.handler.validation.ValidationHandler;
 
 public class TestValidation {
 

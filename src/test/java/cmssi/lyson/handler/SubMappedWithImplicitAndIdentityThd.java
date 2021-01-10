@@ -1,9 +1,10 @@
 package cmssi.lyson.handler;
 
 import cmssi.lyson.annotation.LysonMapping;
+import cmssi.lyson.handler.mapping.MappingConfiguration;
 
 @LysonMapping(implicit=true)
-public class IdentitySubSubMapped {
+public class SubMappedWithImplicitAndIdentityThd {
 
 	@LysonMapping(mapping=MappingConfiguration.IDENTITY_MAPPING)
 	private String name;
@@ -12,7 +13,7 @@ public class IdentitySubSubMapped {
 	
 	private String subsubkey2;
 			
-	public IdentitySubSubMapped(){}
+	public SubMappedWithImplicitAndIdentityThd(){}
 	
 	public String getSubsubkey1() {
 		return this.subsubkey1;

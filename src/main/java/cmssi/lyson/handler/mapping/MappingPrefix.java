@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.handler;
+package cmssi.lyson.handler.mapping;
 
 import cmssi.lyson.annotation.LysonMapping;
 
@@ -46,11 +46,6 @@ public class MappingPrefix {
 		this.findPrefix(mappedType);
 	}
 
-	/**
-	 * Constructor
-	 */
-	public MappingPrefix(){}
-	
 	/**
 	 * Returns true this MappingPrefix's String prefix is not null -
 	 * Otherwise returns false 
@@ -125,12 +120,11 @@ public class MappingPrefix {
 		
 	// Identify the mapping value of the @LysonMapping annotation 
 	// annotating the mappedType argument if any, and use it to create
-	// the components of the String prefix to be used while the mapping
+	// the components of the String prefix to be used by the mapping
 	// process
 	private void findPrefix(Class<?> mappedType) {
-		if(mappedType == null) {
+		if(mappedType == null) 
 			return;
-		}
 		LysonMapping lma = mappedType.getAnnotation(LysonMapping.class);
 		if(lma != null) {
 			String typeMapping = lma.mapping();
