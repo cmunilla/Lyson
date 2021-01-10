@@ -51,7 +51,7 @@ public class MappingType {
 	private static final Logger LOG = Logger.getLogger(MappingType.class.getName());
 	
 	/**
-	 * Cast helper method
+	 * Casting helper method
 	 * 
 	 * @param clazz the targeted Java Type to cast the specified Object to
 	 * @param val the Object to be casted into the specified target Java Type

@@ -47,7 +47,7 @@ public class MappingBuffer {
 	private static final Logger LOG = Logger.getLogger(MappingBuffer.class.getName());
 	
 	private MappingConfiguration config;
-	private volatile Deque<Object> mappeds = null;	
+	private Deque<Object> mappeds = null;	
 
 	/**
 	 * Constructor 

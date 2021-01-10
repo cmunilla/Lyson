@@ -68,8 +68,8 @@ public class MappingConfiguration {
 	/**
 	 * Constructor 
 	 * 
-	 * @param mappingType the {@link MappingType} wrapping the Java Type of 
-	 * the mapping type to be used
+	 * @param mappingType the {@link MappingType} wrapping the Java Type to be 
+	 * used in the mapping process
 	 */
 	public MappingConfiguration(MappingType mappingType){
 		this.mappingType = mappingType;
@@ -139,8 +139,8 @@ public class MappingConfiguration {
 	 * Returns true if an JSON Object item event key might be reused to be assigned as identity to 
 	 * newly created complex data structure. Returns false otherwise
 	 * 
-	 * @return true if an JSON Object item event'key might be reused to be assigned as identity; 
-	 * returns false otherwise
+	 * @return true if an JSON Object item event'key might be reused to be assigned as an identity
+	 * field; returns false otherwise
 	 */
 	public boolean handleIdentity() {
 		return this.handleIdentity;
