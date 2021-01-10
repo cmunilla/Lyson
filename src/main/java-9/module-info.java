@@ -35,4 +35,6 @@ module cmssi.lyson {
 	exports cmssi.lyson.event;
 	exports cmssi.lyson.exception;
 	exports cmssi.lyson.handler;
+	exports cmssi.lyson.handler.mapping;
+	exports cmssi.lyson.handler.validation;
 }
