@@ -8,15 +8,6 @@
   <name>lyson</name>
   <description>Lazy JSON</description>
   
-  <properties>
-  	<sonar.projectKey>cmunilla_Lyson</sonar.projectKey>
-    <sonar.organization>cmunilla</sonar.organization>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-    <sonar.login>5be2ff98dcda42763eb13f0c8775eec87be6eb4c</sonar.login>
-    <sonar.core.codeCoveragePlugin>jacoco</sonar.core.codeCoveragePlugin>
-    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
-  </properties>
   
   <dependencies>  		
 		<dependency>
