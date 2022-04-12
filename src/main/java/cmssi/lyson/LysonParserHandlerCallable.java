@@ -21,20 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.event;
+package cmssi.lyson;
+
+import java.util.concurrent.Callable;
+
+import cmssi.lyson.event.ParsingEvent;
+import cmssi.lyson.handler.LysonParserHandler;
+
 
 /**
- * A ParsingEvent wrapper service
+ * Extended {@link Callable} wrapping a {@link LysonParserHandler} and a {@link ParsingEvent} to be set
+ * before a call and parameterizing the resulting {@link LysonParserHandler}'s handle method invocation
  * 
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public interface ParsingEventWrapper {
+public final class LysonParserHandlerCallable implements Callable<Boolean> {
+	
+	private ParsingEvent parsingEvent;
+	private LysonParserHandler handler;
 
-	/**
-	 * Returns the wrapped ParsingEvent
-	 * 
-	 * @return the wrapped ParsingEvent
-	 */
-	ParsingEvent getEvent();
+	public LysonParserHandlerCallable(LysonParserHandler handler){
+		this.handler = handler;
+	}
+	
+	public void setParsingEvent(ParsingEvent parsingEvent) {
+		this.parsingEvent = parsingEvent;
+	}
+	
+	@Override
+	public Boolean call() throws Exception {
+		return this.handler.handle(this.parsingEvent);
+	}
 }

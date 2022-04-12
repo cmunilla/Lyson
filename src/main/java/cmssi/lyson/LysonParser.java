@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 - 2021  Christophe Munilla
+ * Copyright (c) 2019 - 2022  Christophe Munilla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,20 +30,12 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RunnableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,90 +55,11 @@ import cmssi.lyson.handler.validation.ValidationHandler;
  * Lazy JSON Parser
  * 
  * @author cmunilla@cmssi.fr
- * @version 0.5
+ * @version 0.6
  */
 public class LysonParser {
 
 	private static final Logger LOG = Logger.getLogger(LysonParser.class.getName());
-	
-	private class LysonParserHandlerThreadExecutor extends ThreadPoolExecutor {
-
-		/**
-		 * Constructor
-		 * 
-		 * @param poolSize the thread pool size of the {@link ThreadPoolExecutor}
-		 * to be instantiated
-		 */
-		LysonParserHandlerThreadExecutor(int poolSize) {
-			super(poolSize, poolSize,0L, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>());
-		}
-		
-		/**
-		 * Executes the given tasks parameterized with the specified {@link ParsingEvent}, 
-		 * returning a list of Futures holding their status and results when all complete. 
-		 * Future.isDone is true for each element of the returned list. Note that a completed 
-		 * task could have terminated either normally or by throwing an exception. The results 
-		 * of this method are undefined if the given collection is modified while this operation is in progress.
-		 *
-		 * @param tasks the collection of tasks
-		 * @param event the {@link ParsingEvent} parameterizing the tasks
-		 * 
-		 * @return a list of Futures representing the tasks, in the same sequential order as 
-		 * produced by the iterator for the given task list, each of which has completed
-		 * 
-		 * @throws InterruptedException - if interrupted while waiting, in which case unfinished 
-		 * tasks are cancelled
-		 */
-		List<Future<Boolean>> invokeAll(Collection<LysonParserHandlerCallable> tasks, ParsingEvent event)
-	    throws InterruptedException {
-	        ArrayList<Future<Boolean>> futures = new ArrayList<>(tasks.size());
-	        try {
-	            for (LysonParserHandlerCallable t : tasks) {
-	            	t.setParsingEvent(event);
-	                RunnableFuture<Boolean> f = newTaskFor(t);
-	                futures.add(f);
-	                execute(f);
-	            }
-	            for (int i = 0, size = futures.size(); i < size; i++) {
-	                Future<Boolean> f = futures.get(i);
-	                if (!f.isDone()) {
-	                    try { 
-	                    	f.get(); 
-	                    }
-	                    catch (CancellationException | ExecutionException ignore) {}
-	                }
-	            }
-	            return futures;
-	        } catch (Throwable t) {  
-	        	for (int size = futures.size(),j=0; j < size; j++) {
-	        		futures.get(j).cancel(true);
-	        	}
-	            throw t;
-	        }
-	    }
-	}
-	
-	private final class LysonParserHandlerCallable implements Callable<Boolean> {
-		
-		private ParsingEvent parsingEvent;
-		private LysonParserHandler handler;
-
-		LysonParserHandlerCallable(LysonParserHandler handler){
-			this.handler = handler;
-		}
-		
-		void setParsingEvent(ParsingEvent parsingEvent) {
-			this.parsingEvent = parsingEvent;
-		}
-		
-		@Override
-		public Boolean call() throws Exception {
-			if(this.parsingEvent == null) {
-				return false;
-			}
-			return this.handler.handle(this.parsingEvent);
-		}
-	};
 	
 	/**
      * Assumes that the String passed as parameter represents a numeric
@@ -191,10 +104,10 @@ public class LysonParser {
         return num;
     }
 	
-	private static final int MAX_THREAD = 100;
-	private static final int BUFFER_SIZE = 1024*60;
+	public static final int MAX_THREAD = 100;
+	public static final int BUFFER_SIZE = 1024*60;
 	
-	private static final char EOF  = '\0';
+	public static final char EOF  = '\0';
 
     private Reader reader;
     
@@ -247,51 +160,49 @@ public class LysonParser {
      * parsing
      */
     public void parse(LysonParserHandler... handlers) {
+    	
+    	int length = handlers==null?0:handlers.length;
+    	if(length == 0) 
+    		return;
+    	if(length > MAX_THREAD) 
+    		length = MAX_THREAD;
+    	
+    	LysonParserHandlerThreadExecutor executor = new LysonParserHandlerThreadExecutor(length);
+    	
     	try { 
-    		int length = handlers==null?0:handlers.length;
-    		if(length == 0) {
-    			return; 
-    		}
-    		if(length > MAX_THREAD) {
-    			length = MAX_THREAD;
-    		}
     		LinkedList<LysonParserHandlerCallable> callables = new LinkedList<>();
     		Arrays.stream(handlers).forEach(h -> {
     			callables.add(new LysonParserHandlerCallable(h));
     		});
-    		LysonParserHandlerThreadExecutor executor = new LysonParserHandlerThreadExecutor(length);
     		while(true) {
 	            List<Future<Boolean>> futures = executor.invokeAll(callables, read());
 	            int offset = 0;
 	            for(int pos = 0; pos < futures.size(); pos++) {
 	            	try {
-						if(futures.get(pos).get().booleanValue()) {
+						if(futures.get(pos).get().booleanValue()) 
 							continue;
-						}
 					} catch (ExecutionException e) {
-						if(LOG.isLoggable(Level.SEVERE)) {
+						if(LOG.isLoggable(Level.SEVERE)) 
 							LOG.log(Level.SEVERE,e.getMessage(),e);
-						}
 					}
 					callables.remove(pos-offset);
 					offset+=1;
 	            }
-	            if(callables.isEmpty()) {
+	            if(callables.isEmpty())
 	            	break;
-	            }
     		}
         } catch (LysonParsingException e) {        	
         	Arrays.stream(handlers).forEach(h -> {
     			h.handle(e);
     		});
-    		if(LOG.isLoggable(Level.SEVERE)) {
-    			LOG.log(Level.SEVERE,e.getMessage(),e);
-    		}
+    		if(LOG.isLoggable(Level.SEVERE)) 
+    			LOG.log(Level.SEVERE,e.getMessage(),e);    		
         } catch (InterruptedException e) {
-    		if(LOG.isLoggable(Level.SEVERE)) {
+    		if(LOG.isLoggable(Level.SEVERE)) 
     			LOG.log(Level.SEVERE,e.getMessage(),e);
-    		}
         	Thread.currentThread().interrupt();
+		} finally {
+			executor.shutdownNow();
 		}
     }
     
@@ -318,48 +229,45 @@ public class LysonParser {
     private ParsingEvent read() {
         char c = nextChar();
         if(c == 0) {
-        	if(!this.queue.isEmpty()) {
-        		ParsingEvent lastToken = this.queue.pop();
-        		if (lastToken.getType() == ParsingEvent.JSON_ARRAY_OPENING ) {
-        			throw new LysonParsingException("Json array closing expected",
-        				line,column);
-        		} else if(lastToken.getType() == ParsingEvent.JSON_OBJECT_OPENING ) {
-        			throw new LysonParsingException("Json object closing expected",
-        				line,column);
-        	    }
+        	if(!this.queue.isEmpty()) {        		
+        		ParsingEvent lastToken = this.queue.pop();        		
+        		if (lastToken.getType() == ParsingEvent.JSON_ARRAY_OPENING ) 
+        			throw new LysonParsingException("Json array closing expected", line,column);
+        		
+        		else if(lastToken.getType() == ParsingEvent.JSON_OBJECT_OPENING ) 
+        			throw new LysonParsingException("Json object closing expected", line,column);        	    
         	}
         	return null;
         }
         if (this.queue.isEmpty()) {
             ParsingEvent co = checkOpening(c, "/", null);
-            if (co != null) {
+            if (co != null)
                 return co;
-            }
+            
             return null;
         }  
         ParsingEvent lastToken = this.queue.pop();        
         String path = lastToken.getPath();
-        int index = 0;
+        int index = 0;        
         
-        if(lastToken instanceof ArrayOpeningEvent) {
+        if(lastToken instanceof ArrayOpeningEvent) 
         	index =  ((ArrayOpeningEvent)lastToken).getInnerIndex();
-        }        
-        if (lastToken.getType() == ParsingEvent.JSON_ARRAY_OPENING || 
-        	 lastToken.getType() == ParsingEvent.JSON_OBJECT_OPENING ) {
+        
+        if ((lastToken.getType() & ParsingEvent.OPENING) == ParsingEvent.OPENING )
             this.queue.push(lastToken);
-        }
+       
         switch (lastToken.getType()) {
             case ParsingEvent.JSON_OBJECT_OPENING:
             	ParsingEvent cc = checkClosing(c, path);
-                if (cc != null) {
+                if (cc != null) 
                     return cc;
-                }
+                
             	return parseInJsonObject(c, path);               
             case ParsingEvent.JSON_ARRAY_OPENING:
                 cc = checkClosing(c, path);
-                if (cc != null) {
+                if (cc != null) 
                     return cc;
-                }
+                
                 index+=1;
                 ((ArrayOpeningEvent)lastToken).withInnerIndex(index);
                 return parseInJsonArray(index, c, path);
@@ -397,18 +305,17 @@ public class LysonParser {
                 throw new LysonParsingException("Expected String delimiter", line, column);
         }                
         c = nextChar();
-        if (c == ':'){
+        if (c == ':')
+            moveOn();        
+        else if (c == '='){
             moveOn();
-        }else if (c == '='){
-            moveOn();
-            if (currentChar() == '>'){
+            if (currentChar() == '>')
                 moveOn();                    	
-            } else {
+            else 
                 throw new LysonParsingException("Expected a ':' or '=>' after a key", line, column);
-            }
-        } else {
+        } else 
             throw new LysonParsingException("Expected a ':' or '=>' after a key", line, column);
-        }
+        
         c = nextChar();
         switch (c){
             case '"':
@@ -420,9 +327,9 @@ public class LysonParser {
         }
         if (value == null){
             ParsingEvent co = checkOpening(c, path , key );
-            if (co != null) {
+            if (co != null) 
                 return co;
-            }
+            
             StringBuilder sb = new StringBuilder();
             while (c >= ' ' && ",:]}/\\\"[{;=#".indexOf(c) < 0) {
                 sb.append(c);
@@ -430,9 +337,9 @@ public class LysonParser {
                 c = currentChar();
             }
             String s = sb.toString().trim();
-            if (s.equals("")){
+            if (s.equals(""))
                 throw new LysonParsingException("Missing value", line, column);
-            }
+            
             value = readObject(s);
         }
         c = nextChar();

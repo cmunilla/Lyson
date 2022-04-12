@@ -21,20 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.event;
+package cmssi.lyson.handler.evaluation;
 
 /**
- * A ParsingEvent wrapper service
+ * An EvaluationCallback is the recipient of the {@link EvaluationResult}s of an 
+ * evaluation process
  * 
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public interface ParsingEventWrapper {
+public abstract class EvaluationCallback {
 
-	/**
-	 * Returns the wrapped ParsingEvent
-	 * 
-	 * @return the wrapped ParsingEvent
-	 */
-	ParsingEvent getEvent();
+	public abstract void handle(EvaluationResult extract);
+	
 }

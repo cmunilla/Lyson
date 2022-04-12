@@ -21,20 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.event;
+package cmssi.lyson.handler.evaluation;
 
 /**
- * A ParsingEvent wrapper service
- * 
+ * An EvaluationResult gathers the path of an evaluation process as well as its String result
+ *  
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public interface ParsingEventWrapper {
-
+public class EvaluationResult {
+	
+	public final String path;
+	public final String result;
+	
 	/**
-	 * Returns the wrapped ParsingEvent
+	 * Constructor
 	 * 
-	 * @return the wrapped ParsingEvent
+	 * Instantiates a new EvaluationResult
+	 * 
+	 * @param path the String path for which the EvaluationResult is instantiated
+	 * @param result String result for the specified path
 	 */
-	ParsingEvent getEvent();
+	public EvaluationResult(String path, String result){
+		this.path = path;
+		if(result!=null && result.startsWith(","))
+			this.result = result.substring(1);
+		else
+			this.result = result;
+	}
 }

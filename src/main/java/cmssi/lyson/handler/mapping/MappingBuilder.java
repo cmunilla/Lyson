@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 - 2021  Christophe Munilla
+ * Copyright (c) 2019 - 2022  Christophe Munilla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  * A MappingBuilder is in charge of creating new mapped Object(s) instance(s)
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.5
+ * @version 0.6
  */
 public class MappingBuilder {
 	

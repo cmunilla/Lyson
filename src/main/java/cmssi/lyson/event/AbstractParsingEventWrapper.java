@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 - 2021  Christophe Munilla
+ * Copyright (c) 2019 - 2022  Christophe Munilla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@ package cmssi.lyson.event;
  * interfaces
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.5
+ * @version 0.6
  */
 public abstract class AbstractParsingEventWrapper implements ParsingEvent, ParsingEventWrapper {
 
@@ -40,9 +40,8 @@ public abstract class AbstractParsingEventWrapper implements ParsingEvent, Parsi
 	 * @param event the {@link ParsingEvent} to be wrapped
 	 */
 	public AbstractParsingEventWrapper(ParsingEvent event){
-		if(event == null) {
-			throw new NullPointerException("Null ParsingEvent");
-		}
+		if(event == null) 
+			throw new NullPointerException("Null ParsingEvent");		
 		this.event = event;
 	}
 	
@@ -69,9 +68,8 @@ public abstract class AbstractParsingEventWrapper implements ParsingEvent, Parsi
 	
 	@Override
 	public <P extends ParsingEvent> P adapt(Class<P> type){
-		if(type.isAssignableFrom(getClass())) {
+		if(type.isAssignableFrom(getClass())) 
 			return (P)this;
-		}
 		return this.event.adapt(type);
 	}
 	

@@ -119,9 +119,8 @@ public class TestMapping {
 				private int count = 0;
 				@Override
 				public boolean handle(ParsingEvent event) {
-					if(count++ == 10) {
+					if(count++ == 10) 
 						return false;
-					}
 					return true;
 				}
 			},
@@ -131,9 +130,8 @@ public class TestMapping {
 				private int count = 0;
 				@Override
 				public boolean handle(ParsingEvent event) {
-					if(count++ == 3) {
+					if(count++ == 3)
 						return false;
-					}
 					return true;
 				}
 			});	
@@ -494,6 +492,19 @@ public class TestMapping {
 		assertEquals("val2",im2.getKey2());
 		assertTrue(Map.class.isAssignableFrom(im2.getKey3().getClass()));
 		assertEquals(5,((Map)im2.getKey3()).get("subkey2"));
+	}
+
+	@Test
+	public void testImplicitAndIgnoreMappedMapping() throws FileNotFoundException {
+		String json =  "{\"key1\":\"val1\",\"key2\":\"val2\",\"key3\":{\"subkey1\":1,\"subkey2\":5},\"key4\":\"val4\"}";
+		MappingHandler mapping = new MappingHandler(MappedWithImplicitAndIgnore.class);
+		new LysonParser(json).parse(mapping);	
+		MappedWithImplicitAndIgnore im = mapping.getMapped();
+		assertEquals("val1",im.getKey1());
+		assertEquals("val2",im.getKey2());
+		assertTrue(Map.class.isAssignableFrom(im.getKey3().getClass()));
+		assertEquals(5,((Map)im.getKey3()).get("subkey2"));
+		assertNull(im.getKey4());
 	}
 	
 	@Test

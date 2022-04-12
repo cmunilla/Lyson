@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 - 2021  Christophe Munilla
+ * Copyright (c) 2019 - 2022  Christophe Munilla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ package cmssi.lyson.exception;
 
 /**
  * @author cmunilla@cmssi.fr
- * @version 0.5
+ * @version 0.6
  */
 public class LysonException extends RuntimeException {
 
@@ -46,10 +46,20 @@ public class LysonException extends RuntimeException {
 	/**
 	 * Constructor
 	 * 
-	 * @param e the cause Exception
+	 * @param cause the {@link Throwable} that causes this LysonException
 	 */
-	public LysonException(Exception e) {
-		super(e);
+	public LysonException(Throwable cause) {
+		super(cause);
 	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param message the error message
+	 * @param cause the {@link Throwable} that causes this LysonException
+	 */
+    public LysonException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

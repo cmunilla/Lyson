@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019 - 2021  Christophe Munilla
+ * Copyright (c) 2019 - 2022  Christophe Munilla
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,13 +35,14 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cmssi.lyson.annotation.LysonIgnore;
 import cmssi.lyson.annotation.LysonMapping;
 
 /**
  * Configuration of a mapping process
  *  
  * @author cmunilla@cmssi.fr
- * @version 0.5
+ * @version 0.6
  */
 public class MappingConfiguration {
 	
@@ -160,6 +161,10 @@ public class MappingConfiguration {
 		accessibles.stream().forEach(f -> {
 		    LysonMapping lm = f.getAnnotation(LysonMapping.class);	
 		    if(!implicit && lm == null) 
+		    	return;
+
+		    LysonIgnore li = f.getAnnotation(LysonIgnore.class);	
+		    if(implicit && lm == null && li!=null) 
 		    	return;
 		    
 	    	String mappingName = lm!=null?lm.mapping():null;
