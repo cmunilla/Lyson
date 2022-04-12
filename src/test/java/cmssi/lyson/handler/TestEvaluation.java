@@ -17,7 +17,7 @@ import cmssi.lyson.handler.evaluation.EvaluationResult;
 public class TestEvaluation {
 	
 	@Test
-	public void testEvaluationWithCallback() {
+	public void testJsonObjectEvaluationWithCallback() {
 		
 		String s = "{\"key0\":null,\"key1\":[\"machin\",\"chose\",2]," + 
 			"\"key2\":{\"key20\":\"truc\",\"key21\":45}," + 
@@ -61,18 +61,39 @@ public class TestEvaluation {
 	}
 	
 	@Test
-	public void testEvaluationWithCallback2() {
-		/**			
-		s = "[null,[\"machin\",\"chose\",2],{\"key20\":\"truc\",\"key21\":45},"
+	public void testJsonArrayEvaluationWithCallback() {
+				
+		String s = "[null,[\"machin\",\"chose\",2],{\"key20\":\"truc\",\"key21\":45},"
 		+ "{\"key30\":[{\"key300\":\"bidule\",\"key301\":[8,2,1]},[18,\"intermediate\"],\"standalone\",{\"key300\":\"chose\",\"key301\":[10,20,11]}]}]";
-			
-		handler =  new EvaluationHandler(Arrays.asList("*"), callback);		
-		parser = new LysonParser(s);
-		parser.parse(handler); */
+
+		List<String> paths = Arrays.asList("/*");
+		
+		final Set<String> expected = new HashSet<>();
+		expected.add("* : null");
+		expected.add("* : [\"machin\",\"chose\",2]");
+		expected.add("* : {\"key20\":\"truc\",\"key21\":45}");
+		expected.add("* : {\"key30\":[{\"key300\":\"bidule\",\"key301\":[8,2,1]},[18,\"intermediate\"],\"standalone\",{\"key300\":\"chose\",\"key301\":[10,20,11]}]}");
+		
+		EvaluationCallback callback = new EvaluationCallback() {
+			@Override
+			public void handle(EvaluationResult e) {
+				if(e != EvaluationHandler.END_OF_PARSING) {
+					String result = e.path+ " : " + e.result;
+					System.out.println(result);
+					assert(expected.remove(result));
+				}
+			}
+		};
+		
+		EvaluationHandler handler =  new EvaluationHandler(paths, callback);
+		
+		LysonParser parser = new LysonParser(s);
+		parser.parse(handler);
+		assertTrue(expected.isEmpty());
 	}
 	
 	@Test
-	public void testEvaluationWithoutCallback() {
+	public void testJsonObjectEvaluationWithoutCallback() {
 		String s = "{\"key0\":null,\"key1\":[\"machin\",\"chose\",2]," + 
 				   "\"key2\":{\"key20\":\"truc\",\"key21\":45}," + 
 				   "\"key3\":{\"key30\":[{\"key300\":\"bidule\",\"key301\":[8,2,1]},[18,\"intermediate\"],\"standalone\",{\"key300\":\"chose\",\"key301\":[10,20,11]}]}"
