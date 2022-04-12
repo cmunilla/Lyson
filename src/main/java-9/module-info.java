@@ -37,5 +37,6 @@ module cmssi.lyson {
 	exports cmssi.lyson.handler;
 	exports cmssi.lyson.handler.mapping;
 	exports cmssi.lyson.handler.validation;
+	exports cmssi.lyson.handler.evaluation;
 	exports cmssi.lyson.handler.writer;
 }
