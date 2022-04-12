@@ -3,7 +3,7 @@
   
   <groupId>cmssi.util</groupId>
   <artifactId>lyson</artifactId>
-  <version>0.5</version>
+  <version>0.6</version>
   
   <name>lyson</name>
   <description>Lazy JSON</description>
