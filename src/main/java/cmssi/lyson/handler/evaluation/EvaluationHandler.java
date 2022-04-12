@@ -123,16 +123,17 @@ public class EvaluationHandler implements LysonParserHandler {
 			executor.invokeAll(callables, event);
             for(int i=0; i< processors.size();) {
 				EvaluationProcessor processor = processors.get(i);
-				if(processor.isComplete()) {
-					if(callback!=null)
-						callback.handle(processor.getEvaluation());	
-					else {
-						if(!processor.getPath().endsWith(WILDCARD))					
-							processors.remove(i);
-						extractions.add(processor.getEvaluation());
-					}
-				} else
+				if(!processor.isComplete()) {
 					i+=1;
+					continue;
+				}
+				if(callback!=null)
+					callback.handle(processor.getEvaluation());	
+				else {
+					if(!processor.getPath().endsWith(WILDCARD))					
+						processors.remove(i);
+					extractions.add(processor.getEvaluation());
+				}	
 			}
 			if(processors.isEmpty())
 				return false;
