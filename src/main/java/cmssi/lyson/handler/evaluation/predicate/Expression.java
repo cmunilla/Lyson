@@ -130,7 +130,7 @@ public class Expression implements Verifiable {
 		if(verified.isEmpty())
 			this.verified = true;
 		else 
-			this.verified = this.logicalOperator.equals(LogicalOperator.NOT)
+			this.verified = lo.equals(LogicalOperator.NOT)
 			    ?!verified.get().booleanValue():verified.get().booleanValue();
 		
 		this.verification = true;
