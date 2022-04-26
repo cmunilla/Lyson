@@ -23,33 +23,40 @@
  */
 package cmssi.lyson.handler.evaluation;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
 /**
- * An EvaluationResult gathers the path of an evaluation process as well as its String result
- *  
+ * Default {@link EvaluationCallback} implementation for evaluation process
+ * 
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public class EvaluationResult {
+public class DefaultEvaluationCallback implements EvaluationCallback {
 
-	public final String target;
-	public final String path;
-	public final String result;
+	private List<EvaluationResult> results;
 	
 	/**
 	 * Constructor
 	 * 
-	 * Instantiates a new EvaluationResult
-	 * 
-	 * @param target the targeted String path for which the EvaluationResult is instantiated
-	 * @param path the effective String path for which the EvaluationResult is instantiated
-	 * @param result String result for the specified path and target
+	 * Instantiates a new DefaultEvaluationCallback
 	 */
-	public EvaluationResult(String target, String path, String result){
-		this.target = target;
-		this.path = path;
-		if(result!=null && result.startsWith(","))
-			this.result = result.substring(1);
-		else
-			this.result = result;
+	public DefaultEvaluationCallback() {
+		this.results = new ArrayList<>();
 	}
+	
+	@Override
+	public void handle(EvaluationResult result) {
+		if(result != null && result != EvaluationHandler.END_OF_PARSING)
+			this.results.add(result);
+	}
+	
+	@Override
+	public Stream<EvaluationResult> results(){
+		if(this.results.isEmpty())
+			return Stream.empty();
+		return results.stream();
+	}
+
 }

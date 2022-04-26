@@ -23,6 +23,8 @@
  */
 package cmssi.lyson.handler.evaluation;
 
+import java.util.stream.Stream;
+
 /**
  * An EvaluationCallback is the recipient of the {@link EvaluationResult}s of an 
  * evaluation process
@@ -30,8 +32,19 @@ package cmssi.lyson.handler.evaluation;
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public abstract class EvaluationCallback {
+public interface EvaluationCallback {
 
-	public abstract void handle(EvaluationResult extract);
+	/**
+	 * Treats the {@link EvaluationResult} passed as parameter
+	 * 
+	 * @param result the {@link EvaluationResult} to treat
+	 */
+	void handle(EvaluationResult result);
 	
+	/**
+	 * Returns the Stream of registered {@link EvaluationResult}s
+	 * 
+	 * @return the {@link EvaluationResult}s Stream
+	 */
+	Stream<EvaluationResult> results();
 }

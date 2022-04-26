@@ -24,32 +24,12 @@
 package cmssi.lyson.handler.evaluation;
 
 /**
- * An EvaluationResult gathers the path of an evaluation process as well as its String result
+ * Possible JSON entity
  *  
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public class EvaluationResult {
-
-	public final String target;
-	public final String path;
-	public final String result;
-	
-	/**
-	 * Constructor
-	 * 
-	 * Instantiates a new EvaluationResult
-	 * 
-	 * @param target the targeted String path for which the EvaluationResult is instantiated
-	 * @param path the effective String path for which the EvaluationResult is instantiated
-	 * @param result String result for the specified path and target
-	 */
-	public EvaluationResult(String target, String path, String result){
-		this.target = target;
-		this.path = path;
-		if(result!=null && result.startsWith(","))
-			this.result = result.substring(1);
-		else
-			this.result = result;
-	}
+enum JsonEntity {
+	OBJECT,
+	ARRAY;		
 }

@@ -21,35 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.handler.evaluation;
+package cmssi.lyson.handler.evaluation.predicate;
+
+import cmssi.lyson.handler.evaluation.EvaluationContext;
+import cmssi.lyson.handler.evaluation.predicate.Predicate.ValidationTime;
 
 /**
- * An EvaluationResult gathers the path of an evaluation process as well as its String result
- *  
+ * A Verifiable represents assertion to be verified
+ * 
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public class EvaluationResult {
+public interface Verifiable {
 
-	public final String target;
-	public final String path;
-	public final String result;
+	/**
+	 * Evaluates whether this Verifiable is verified with the {@link 
+	 * EvaluationContext} passed as parameter
+	 * 
+	 * @param evaluationContext the {@link EvaluationContext} for which verifying
+	 * this Verifiable
+	 */
+	void verify(EvaluationContext evaluationContext);
 	
 	/**
-	 * Constructor
+	 * Return true if this Verifiable is verified for the specified {@link ValidationTime};
+	 * returns false otherwise
 	 * 
-	 * Instantiates a new EvaluationResult
+	 * @param validationTime the {@link ValidationTime} defining when the verification occurs 
 	 * 
-	 * @param target the targeted String path for which the EvaluationResult is instantiated
-	 * @param path the effective String path for which the EvaluationResult is instantiated
-	 * @param result String result for the specified path and target
+	 * @return true if this Verifiable is verified; false otherwise
 	 */
-	public EvaluationResult(String target, String path, String result){
-		this.target = target;
-		this.path = path;
-		if(result!=null && result.startsWith(","))
-			this.result = result.substring(1);
-		else
-			this.result = result;
-	}
+	boolean verified(ValidationTime validationTime);
 }

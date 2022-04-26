@@ -7,9 +7,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import cmssi.lyson.LysonParser;
+import cmssi.lyson.handler.evaluation.DefaultEvaluationCallback;
 import cmssi.lyson.handler.evaluation.EvaluationCallback;
 import cmssi.lyson.handler.evaluation.EvaluationHandler;
 import cmssi.lyson.handler.evaluation.EvaluationResult;
@@ -42,11 +44,11 @@ public class TestEvaluation {
 		expected.add("key3/key30/[0]/* : [8,2,1]");
 		expected.add("key3/* : [{\"key300\":\"bidule\",\"key301\":[8,2,1]},[18,\"intermediate\"],\"standalone\",{\"key300\":\"chose\",\"key301\":[10,20,11]}]");
 		
-		EvaluationCallback callback = new EvaluationCallback() {
+		EvaluationCallback callback = new DefaultEvaluationCallback() {
 			@Override
 			public void handle(EvaluationResult e) {
 				if(e != EvaluationHandler.END_OF_PARSING) {
-					String result = e.path+ " : " + e.result;
+					String result = e.target+ " : " + e.result;
 					System.out.println(result);
 					assert(expected.remove(result));
 				}
@@ -74,11 +76,11 @@ public class TestEvaluation {
 		expected.add("* : {\"key20\":\"truc\",\"key21\":45}");
 		expected.add("* : {\"key30\":[{\"key300\":\"bidule\",\"key301\":[8,2,1]},[18,\"intermediate\"],\"standalone\",{\"key300\":\"chose\",\"key301\":[10,20,11]}]}");
 		
-		EvaluationCallback callback = new EvaluationCallback() {
+		EvaluationCallback callback = new DefaultEvaluationCallback() {
 			@Override
 			public void handle(EvaluationResult e) {
 				if(e != EvaluationHandler.END_OF_PARSING) {
-					String result = e.path+ " : " + e.result;
+					String result = e.target+ " : " + e.result;
 					System.out.println(result);
 					assert(expected.remove(result));
 				}
@@ -131,11 +133,10 @@ public class TestEvaluation {
 		List<EvaluationResult> extractions = handler.getResults();
 		
 		extractions.stream().forEach(e->{
-			String result = e.path+ " : " + e.result;
+			String result = e.target+ " : " + e.result;
 			System.out.println(result);
 			assert(expected.remove(result));
 		});
-		
 		assertTrue(expected.isEmpty());	
 	}
 }

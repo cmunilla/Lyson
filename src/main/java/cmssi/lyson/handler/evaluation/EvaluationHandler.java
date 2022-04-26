@@ -24,6 +24,7 @@
 package cmssi.lyson.handler.evaluation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,7 +39,7 @@ import cmssi.lyson.handler.LysonParserHandler;
 
 
 /**
- * EvaluationHandler allows to extract parts of a json document using a set of String paths
+ * EvaluationHandler allows to extract elements of a json document using a set of {Evaluation}s
  *  
  * @author cmunilla@cmssi.fr
  * @version 0.6
@@ -49,13 +50,12 @@ public class EvaluationHandler implements LysonParserHandler {
 
 	static final String WILDCARD = "*";
 	
-	public static final EvaluationResult END_OF_PARSING = new EvaluationResult(null,null); 
+	public static final EvaluationResult END_OF_PARSING = new EvaluationResult(null, null, null); 
 
-    private List<EvaluationResult> extractions = null;	
-	private List<LysonParserHandlerCallable> callables = null ;
-	private List<EvaluationProcessor> processors = null ;
-	
 	private EvaluationCallback callback = null;
+	
+	private List<LysonParserHandlerCallable> callables = null ;
+	private List<EvaluationProcessor> processors = null ;	
 
     private final LysonParserHandlerThreadExecutor executor;
 
@@ -67,7 +67,7 @@ public class EvaluationHandler implements LysonParserHandler {
      * @param paths the List of String paths for which to extract json elements
      */
     public EvaluationHandler(List<String> paths) {
-	    this(paths, null);	
+	    this(paths, new DefaultEvaluationCallback());	
     }
     
     /**
@@ -79,61 +79,66 @@ public class EvaluationHandler implements LysonParserHandler {
      * @param callback the {@link EvaluationCallback} to be notified of new {@link EvaluationResult} results
      */
     public EvaluationHandler(List<String> paths, EvaluationCallback callback) {
-		int length = paths==null?0:paths.size();
+    	
+    	List<String> pth = new ArrayList<>();
+    	if(paths!=null)
+    		pth.addAll(paths);
+    	
+		int length = pth.size();
 		if(length > LysonParser.MAX_THREAD) 
 			length = LysonParser.MAX_THREAD;
 		
-		this.executor = new LysonParserHandlerThreadExecutor(length);
-
-		if(length == 0)
-			return;
-		
-		this.processors = paths.stream(
-				).map(p -> new EvaluationProcessor(p)
-				).collect(Collectors.toList());
-		this.callables = this.processors.stream(
-				).map(p -> new LysonParserHandlerCallable(p)
-				).collect(Collectors.toList());
-		
-		if(callback!=null)
-			this.callback = callback;
+		if(length > 0){
+			this.executor = new LysonParserHandlerThreadExecutor(length);
+			this.processors = pth.stream(
+					).map(p -> new EvaluationProcessor(p)
+					).collect(Collectors.toList());
+			this.callables = this.processors.stream(
+					).map(p -> new LysonParserHandlerCallable(p)
+					).collect(Collectors.toList());
+		} else {
+			this.executor = new LysonParserHandlerThreadExecutor(1);
+			this.processors = Collections.emptyList();
+			this.callables = Collections.emptyList();
+		}
+		if(callback==null)
+			this.callback = new DefaultEvaluationCallback();
 		else
-			this.extractions = new ArrayList<>();	
+			this.callback = callback;
     }
 
 	/**
-	 * Returns the List of built {@link ExtractionResult}s
+	 * Returns the List of resulting {@link ExtractionResult}s
 	 * 
 	 * @return the List of {@link ExtractionResult} results
 	 */
 	public List<EvaluationResult> getResults() {	
-		return this.extractions;
+		return this.callback.results().collect(Collectors.toList());
 	}
 	
 	@Override
 	public boolean handle(ParsingEvent event) {		
 		try {
 			if(event == null) {
-				if(this.callback!=null)
-					this.callback.handle(END_OF_PARSING);
+				this.callback.handle(END_OF_PARSING);
 				this.callables.clear();
 				this.executor.shutdownNow();
 				return false;
 			}
 			executor.invokeAll(callables, event);
-            for(int i=0; i< processors.size();) {
+			int i=0;
+			int offset = 0;
+			while(i< processors.size()) {
+				offset = 1;
 				EvaluationProcessor processor = processors.get(i);
-				if(!processor.isComplete()) {
-					i+=1;
-					continue;
-				}
-				if(callback!=null)
-					callback.handle(processor.getEvaluation());	
-				else {
-					if(!processor.getPath().endsWith(WILDCARD))					
+				if(processor.isComplete()) {
+					callback.handle(processor.getEvaluationResult());
+					if(!processor.getPath().endsWith(WILDCARD))	{			
 						processors.remove(i);
-					extractions.add(processor.getEvaluation());
-				}	
+						offset = 0;
+					}
+				}
+				i+=offset;
 			}
 			if(processors.isEmpty())
 				return false;
@@ -157,65 +162,4 @@ public class EvaluationHandler implements LysonParserHandler {
 		if(LOG.isLoggable(Level.SEVERE)) 
 			LOG.log(Level.SEVERE, parsingException.getMessage(), parsingException);
 	}
-
-//	public static void main(String args[]) {
-//		
-//		String s = "{\"key0\":null,\"key1\":[\"machin\",\"chose\",2],"
-//			+ "\"key2\":{\"key20\":\"truc\",\"key21\":45},"
-//			+ "\"key3\":{\"key30\":[{\"key300\":\"bidule\",\"key301\":[8,2,1]},[18,\"intermediate\"],\"standalone\",{\"key300\":\"chose\",\"key301\":[10,20,11]}]}}";
-//		
-//		EvaluationHandler handler =  new EvaluationHandler(Arrays.asList(
-//			"*",
-//			"/key3/key30/[3]/key301",
-//			"/key3/key30/[0]",
-//			"/key3",
-//			"/key3/key30/[2]",
-//			"/key2/key20",
-//			"/key2/key25",
-//			"/key3/key30/[3]/key301/*")
-//		);
-//		LysonParser parser = new LysonParser(s);
-//		parser.parse(handler);
-//		List<EvaluationResult> extractions = handler.getResults();		
-//		extractions.stream().forEach(e->{
-//			System.out.println( e.path+ " : " + e.result);
-//		});	
-//
-//		System.out.println();
-//		System.out.println("##########################################################");
-//		System.out.println();
-//		
-//		EvaluationCallback callback = new EvaluationCallback() {
-//			@Override
-//			public void handle(EvaluationResult e) {
-//				System.out.println("--------------------------------------------------------");
-//				if(e == END_OF_PARSING)
-//					System.out.println( "end of parsing");
-//				else
-//					System.out.println( e.path+ " : " + e.result);
-//				System.out.println("--------------------------------------------------------");
-//			}
-//		};
-//		
-//		handler =  new EvaluationHandler(Arrays.asList(
-//			"key3/key30/[3]/key301/*", 
-//			"/key3/key30/*", 
-//			"/key3/key30/[0]/*", 
-//			"/key3/*"), 
-//		callback);
-//		
-//		parser = new LysonParser(s);
-//		parser.parse(handler);
-//		System.out.println();
-//		System.out.println("##########################################################");
-//		System.out.println();
-//		
-//		s = "[null,[\"machin\",\"chose\",2],{\"key20\":\"truc\",\"key21\":45},"
-//		+ "{\"key30\":[{\"key300\":\"bidule\",\"key301\":[8,2,1]},[18,\"intermediate\"],\"standalone\",{\"key300\":\"chose\",\"key301\":[10,20,11]}]}]";
-//			
-//		handler =  new EvaluationHandler(Arrays.asList("*"), callback);		
-//		parser = new LysonParser(s);
-//		parser.parse(handler);
-//	}
-
 }

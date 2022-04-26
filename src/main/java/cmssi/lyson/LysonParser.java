@@ -198,8 +198,6 @@ public class LysonParser {
     		if(LOG.isLoggable(Level.SEVERE)) 
     			LOG.log(Level.SEVERE,e.getMessage(),e);    		
         } catch (InterruptedException e) {
-    		if(LOG.isLoggable(Level.SEVERE)) 
-    			LOG.log(Level.SEVERE,e.getMessage(),e);
         	Thread.currentThread().interrupt();
 		} finally {
 			executor.shutdownNow();
@@ -223,9 +221,6 @@ public class LysonParser {
         return handler.valid();
     }
 
-    /* (non-Javadoc)
-     * @return
-     */
     private ParsingEvent read() {
         char c = nextChar();
         if(c == 0) {
@@ -282,17 +277,6 @@ public class LysonParser {
         return null;
     }
     
-    /*
-     * (non-Javadoc)
-     * 
-     * Last register event was a JSON object opening one - 
-     * Continue to parse knowing that
-     * 
-     * @param c the last read character
-     * @param path the String current path
-     * 
-     * @return the next {link ParsinEvent}
-     */
     private ParsingEvent parseInJsonObject(char c, String path) {    	
         String key = null;
         Object value = null;
@@ -358,18 +342,6 @@ public class LysonParser {
     	
     }
     
-    /*
-     * (non-Javadoc)
-     * 
-     * Last register event was a JSON array opening one - 
-     * Continue to parse knowing that
-     * 
-     * @param index the current int index in the parsed array
-     * @param c the last read character
-     * @param path the String current path
-     * 
-     * @return the next {link ParsinEvent}
-     */
     private ParsingEvent parseInJsonArray(int index, char c, String path) {
     	Object value = null;
         switch (c) {
@@ -421,8 +393,6 @@ public class LysonParser {
             	).withIndex(index)).withValue(value);
     }
 
-    /* (non-Javadoc)
-     */
     private void checkClosingArray() {
         if (this.queue.isEmpty()) {
             throw new LysonParsingException("Unexpected array closing", line, column);
@@ -433,8 +403,6 @@ public class LysonParser {
         }
     }
 
-    /* (non-Javadoc)
-     */
     private void checkClosingObject() {
         if (this.queue.isEmpty()) {
             throw new LysonParsingException("Unexpected object closing", line,  column);
@@ -445,13 +413,6 @@ public class LysonParser {
         }
     }
 
-    /* (non-Javadoc)
-     * 
-     * @param c
-     * @param path
-     * 
-     * @return
-     */
     private ParsingEvent checkClosing(char c, String path) {
         LysonParsingEvent cc = null;
         switch (c) {
@@ -481,14 +442,6 @@ public class LysonParser {
         return cc.withPath(path);
     }
 
-    /* (non-Javadoc)
-     * 
-     * @param c
-     * @param path
-     * @param key
-     * 
-     * @return
-     */
     private ParsingEvent checkOpening(char c, String path, Object key) {
         ParsingEvent o = null;
         int tokenType = -1;                      
@@ -527,9 +480,6 @@ public class LysonParser {
         return o;
     }
 
-    /* (non-Javadoc)
-     * 
-     */
     private char currentChar() {
     	if(pos >= length) {
     		length = -1;
@@ -549,8 +499,6 @@ public class LysonParser {
         return c;
     }
 
-    /* (non-Javadoc)
-     */
     private char nextChar() {
         for ( ; ; ) {
             char c = currentChar();
@@ -565,26 +513,11 @@ public class LysonParser {
         }
     }
 
-    /* (non-Javadoc)
-     * 
-     * Makes the inner buffer cursor move  
-     */
     private void moveOn(){
         pos+=1;
         column+=1;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * Reads the String between the quoted char passed as parameter
-     * 
-     * @param q the quote char 
-     * 
-     * @return the String between the specified quoted char
-     * 
-     * @throws LysonException if an error occurred while reading the string 
-     */
     private String readString(char q) throws LysonException {
         char c;
         StringBuilder sb = new StringBuilder();
@@ -649,18 +582,7 @@ public class LysonParser {
             }
         }
     }
-    
-    /* (non-Javadoc)
-     * 
-     * Tries to identify the boolean or numeric value the String argument
-     * represents, to convert it into the appropriate type and to return
-     * the converted value
-     *  
-     * @param s the String formated object to be converted
-     * 
-     * @return the appropriate boolean, numeric or string object, according 
-     * the s string argument
-     */
+
     private Object readObject(String s) {    	
         if (s.equalsIgnoreCase("true")) {
             return Boolean.TRUE;

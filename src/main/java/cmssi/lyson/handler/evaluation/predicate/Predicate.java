@@ -21,35 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.handler.evaluation;
+package cmssi.lyson.handler.evaluation.predicate;
 
 /**
- * An EvaluationResult gathers the path of an evaluation process as well as its String result
- *  
+ * A Predicate is a {@link Verifiable} with a specific {@link ValidationTime} 
+ * 
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public class EvaluationResult {
-
-	public final String target;
-	public final String path;
-	public final String result;
+public interface Predicate extends Verifiable {
 	
 	/**
-	 * Constructor
-	 * 
-	 * Instantiates a new EvaluationResult
-	 * 
-	 * @param target the targeted String path for which the EvaluationResult is instantiated
-	 * @param path the effective String path for which the EvaluationResult is instantiated
-	 * @param result String result for the specified path and target
+	 * Possible time validation
 	 */
-	public EvaluationResult(String target, String path, String result){
-		this.target = target;
-		this.path = path;
-		if(result!=null && result.startsWith(","))
-			this.result = result.substring(1);
-		else
-			this.result = result;
+	public static enum ValidationTime {
+		EARLY,
+		LATELY;
 	}
+	
+	/**
+	 * Returns the {@link ValidationTime} of this {@link Predicate}
+	 * 
+	 * @return this {@link Predicate}'s {@link ValidationTime}
+	 */
+	ValidationTime getValidationTime();
 }

@@ -21,35 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package cmssi.lyson.handler.evaluation;
+package cmssi.lyson.handler.evaluation.predicate;
 
 /**
- * An EvaluationResult gathers the path of an evaluation process as well as its String result
- *  
+ * Possible logical operators that can be used to build {@link Expression}s
+ * 
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public class EvaluationResult {
-
-	public final String target;
-	public final String path;
-	public final String result;
-	
-	/**
-	 * Constructor
-	 * 
-	 * Instantiates a new EvaluationResult
-	 * 
-	 * @param target the targeted String path for which the EvaluationResult is instantiated
-	 * @param path the effective String path for which the EvaluationResult is instantiated
-	 * @param result String result for the specified path and target
-	 */
-	public EvaluationResult(String target, String path, String result){
-		this.target = target;
-		this.path = path;
-		if(result!=null && result.startsWith(","))
-			this.result = result.substring(1);
-		else
-			this.result = result;
-	}
+public enum LogicalOperator {
+	AND,
+	NOP,
+	NOT,
+	OR,
+	XOR;
 }

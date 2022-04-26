@@ -24,32 +24,64 @@
 package cmssi.lyson.handler.evaluation;
 
 /**
- * An EvaluationResult gathers the path of an evaluation process as well as its String result
+ * A Nested instance wraps information about a parsed JSON entity
  *  
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public class EvaluationResult {
+public class Nested {
 
-	public final String target;
-	public final String path;
-	public final String result;
+	private final JsonEntity jsonEntity;
+	private final int position;
+	private int index;
 	
 	/**
 	 * Constructor
 	 * 
-	 * Instantiates a new EvaluationResult
+	 * Instantiates a new Nested 
 	 * 
-	 * @param target the targeted String path for which the EvaluationResult is instantiated
-	 * @param path the effective String path for which the EvaluationResult is instantiated
-	 * @param result String result for the specified path and target
+	 * @param jsonEntity the {@link JsonEntity} wrapped by the Nested to be instantiated
+	 * @param position the integer position of the JSON entity wrapped by the Nested to be 
+	 * instantiated
 	 */
-	public EvaluationResult(String target, String path, String result){
-		this.target = target;
-		this.path = path;
-		if(result!=null && result.startsWith(","))
-			this.result = result.substring(1);
-		else
-			this.result = result;
+	public Nested(JsonEntity jsonEntity, int position){
+		this.jsonEntity = jsonEntity;
+		this.position = position;
+		this.index = -1;
+	}
+	
+	/**
+	 * Increments and returns the internal integer index of this Nested 
+	 * @return the incremented integer value of this Nested's index
+	 */
+	public int inc(){
+		this.index+=1;
+		return this.index;
+	}
+
+	/**
+	 * Returns the internal integer index of this Nested 
+	 * @return the integer value of this Nested's index
+	 */
+	public int index() {
+		return this.index;
+	}
+
+	/**
+	 * Returns the integer position of this Nested
+	 * 
+	 * @return this Nested's position
+	 */
+	public int position() {
+		return this.position;
+	}
+	
+	/**
+	 * Returns the {@link JsonEntity} wrapped by this Nested
+	 * 
+	 * @return this Nested's JSON entity
+	 */
+	public JsonEntity jsonEntity() {
+		return this.jsonEntity;
 	}
 }
