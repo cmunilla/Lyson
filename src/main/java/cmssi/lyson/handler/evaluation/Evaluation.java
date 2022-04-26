@@ -23,7 +23,7 @@
  */
 package cmssi.lyson.handler.evaluation;
 
-import cmssi.lyson.handler.evaluation.predicate.Predicate.ValidationTime;
+import cmssi.lyson.handler.evaluation.predicate.ValidationTime;
 import cmssi.lyson.handler.evaluation.predicate.Verifiable;
 
 /**

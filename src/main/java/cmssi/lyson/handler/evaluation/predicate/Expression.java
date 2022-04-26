@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 
 import cmssi.lyson.handler.evaluation.EvaluationContext;
-import cmssi.lyson.handler.evaluation.predicate.Predicate.ValidationTime;
 
 /**
  * An Expression gathers {@link Predicate}s linked by a {@link LogicalOperator}

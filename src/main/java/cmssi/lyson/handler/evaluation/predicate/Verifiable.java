@@ -24,7 +24,6 @@
 package cmssi.lyson.handler.evaluation.predicate;
 
 import cmssi.lyson.handler.evaluation.EvaluationContext;
-import cmssi.lyson.handler.evaluation.predicate.Predicate.ValidationTime;
 
 /**
  * A Verifiable represents assertion to be verified

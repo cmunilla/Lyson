@@ -24,17 +24,12 @@
 package cmssi.lyson.handler.evaluation.predicate;
 
 /**
- * A Predicate is a {@link Verifiable} with a specific {@link ValidationTime} 
+ * Possible time validation
  * 
  * @author cmunilla@cmssi.fr
  * @version 0.6
  */
-public interface Predicate extends Verifiable {
-	
-	/**
-	 * Returns the {@link ValidationTime} of this {@link Predicate}
-	 * 
-	 * @return this {@link Predicate}'s {@link ValidationTime}
-	 */
-	ValidationTime getValidationTime();
+public enum ValidationTime {
+	EARLY,
+	LATELY;
 }
