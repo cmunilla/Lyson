@@ -190,8 +190,9 @@ public class EvaluationContext {
 			}
 			break;
 		}
-		return (i == length && length == this.targetElements.length)
-			?(_pathElements.length==this.targetElements.length?2:1):0;
+		int level =  (i == length && length == this.targetElements.length)?1:0;
+		level+=(level==1 && _pathElements.length==this.targetElements.length?1:0);
+		return level;
 	}
 	
 	/**
