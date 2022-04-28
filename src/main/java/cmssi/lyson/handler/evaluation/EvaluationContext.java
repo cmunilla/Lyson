@@ -26,6 +26,8 @@ package cmssi.lyson.handler.evaluation;
 import java.util.Deque;
 import java.util.LinkedList;
 
+import cmssi.lyson.event.ParsingEvent;
+
 /**
  * An EvaluationContext wraps information about an running evaluation process
  *  
@@ -34,52 +36,36 @@ import java.util.LinkedList;
  */
 public class EvaluationContext {
 	
-	private String lastKey;
-	private Object lastValue;
-	
 	private Deque<Nested> nesteds;
 	private StringBuilder builder;
-	
+
 	private String currentPath;
+	
+	private final String target;
+	private String[] targetElements;
+	
+	private final boolean wildcard;
 	
 	/**
 	 * Constructor
 	 * 
 	 * Instantiates a new EvaluationContext
+	 * 
+	 * @param target
 	 */
-	public EvaluationContext() {
+	public EvaluationContext(String target) {
+		String formatedTarget = target;
+		if(target.startsWith("/"))
+			formatedTarget = formatedTarget.substring(1);
+		if(target.endsWith("/"))
+			formatedTarget = formatedTarget.substring(0,formatedTarget.length()-1);
+		this.target = formatedTarget;
+
+		this.targetElements = this.target.split("/");
+		this.wildcard  = EvaluationHandler.WILDCARD.equals(this.targetElements[this.targetElements.length-1]);
 		this.builder = new StringBuilder();
 		this.nesteds = new LinkedList<>();
 	}
-	
-	/**
-	 * @return the lastKey
-	 */
-	public String getLastKey() {
-		return lastKey;
-	}
-	
-	/**
-	 * @param lastKey the lastKey to set
-	 */
-	public void setLastKey(String lastKey) {
-		this.lastKey = lastKey;
-	}
-	
-	/**
-	 * @return the lastValue
-	 */
-	public Object getLastValue() {
-		return lastValue;
-	}
-	
-	/**
-	 * @param lastValue the lastValue to set
-	 */
-	public void setLastValue(Object lastValue) {
-		this.lastValue = lastValue;
-	}
-
 
 	/**
 	 * @return the currentPath
@@ -93,6 +79,13 @@ public class EvaluationContext {
 	 */
 	public void setCurrentPath(String currentPath) {
 		this.currentPath = currentPath;
+	}
+	
+	/**
+	 * @return the String target path of this EvaluationContext
+	 */
+	public String getTargetPath() {
+		return this.target;
 	}
 
 	/**
@@ -121,7 +114,7 @@ public class EvaluationContext {
 		if(nesteds.isEmpty())
 			return null;
 		return this.nesteds.removeLast();
-	}
+	}	
 	
 	/**
 	 * Appends the JSON formated String passed as parameter to the StringBuilder 
@@ -130,10 +123,9 @@ public class EvaluationContext {
 	 * @param json the JSON formated String to append to this EvaluationContext's
 	 * StringBuilder
 	 */
-	public void append(String json) {
+	public void collect(String json) {
 		this.builder.append(json);
 	}
-	
 	
 	/**
 	 * Returns the JSON formated String content of the StringBuilder of 
@@ -141,15 +133,71 @@ public class EvaluationContext {
 	 * 
 	 * @return this EvaluationContext's JSON formated String content 
 	 */
-	public String json() {
+	public String getCollected() {
 		return this.builder.toString();
 	}
 
+	/**
+	 * @return the size of the collected String
+	 */
+	public int getCollectedLength() {
+		return this.builder.length();
+	}
 	
 	/**
 	 * Clear the StringBuilder of this EvaluationContext
 	 */
 	public void reset() {
 		this.builder = new StringBuilder();
+	}
+
+	/**
+	 * Returns the compliance level of the {@link ParsingEvent} passed as parameter with 
+	 * this EvaluationContext
+	 *  
+	 * @param event the {@link ParsingEvent} to define the level of compliance of
+	 * 
+	 * @return the integer compliance level
+	 */
+	public int getComplianceLevel(ParsingEvent event) {
+		String formatedPath = event.getPath();			
+		if(event.getPath().startsWith("/"))
+			formatedPath = formatedPath.substring(1);
+		if(event.getPath().endsWith("/") && event.getPath().length() > 1)
+			formatedPath = formatedPath.substring(0,formatedPath.length()-1);
+		
+		String[] _pathElements = null;
+		int length = 0;
+		
+		this.setCurrentPath(formatedPath);
+		
+		if(formatedPath.length() > 0) {
+			_pathElements = formatedPath.split("/");
+			length = (_pathElements.length < this.targetElements.length)
+				?_pathElements.length:this.targetElements.length;		
+		} else {
+			_pathElements = new String[0];
+			length = 0;
+		}
+		
+		int i = 0;			
+		for(;i < length ;) {
+			String pathElement = this.targetElements[i];
+			String _pathElement = _pathElements[i];
+			if(EvaluationHandler.WILDCARD.equals(pathElement) || _pathElement.equals(pathElement)){
+				i+=1;
+				continue;
+			}
+			break;
+		}
+		return (i == length && length == this.targetElements.length)
+			?(_pathElements.length==this.targetElements.length?2:1):0;
+	}
+	
+	/**
+	 * @return the wildcard
+	 */
+	public boolean isWildcard() {
+		return wildcard;
 	}
 }

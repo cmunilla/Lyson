@@ -23,8 +23,6 @@
  */
 package cmssi.lyson.handler.evaluation;
 
-import java.util.Deque;
-import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,13 +44,8 @@ public class EvaluationProcessor implements LysonParserHandler {
 	
 	private static final Logger LOG = Logger.getLogger(EvaluationProcessor.class.getCanonicalName());
 
-	private String path = null;
-	private String[] pathElements = null;
-	private StringBuilder builder = null;
+	private EvaluationContext context;
 	private boolean complete = false;
-	private boolean isWildcard = false;
-	
-	private Deque<Nested> nesteds = new LinkedList<>();
 	
 	/**
 	 * Constructor
@@ -63,15 +56,7 @@ public class EvaluationProcessor implements LysonParserHandler {
 	 * EvaluationProcessor to be instantiated
 	 */
 	public EvaluationProcessor(String path){
-		String formatedPath = path;
-		if(path.startsWith("/"))
-			formatedPath = formatedPath.substring(1);
-		if(path.endsWith("/"))
-			formatedPath = formatedPath.substring(0,formatedPath.length()-1);
-		this.path = formatedPath;
-		this.pathElements = formatedPath.split("/");
-		this.isWildcard  = EvaluationHandler.WILDCARD.equals(this.pathElements[this.pathElements.length-1]);
-		this.builder = new StringBuilder();
+		this.context = new EvaluationContext(path);
 	}
 	
 	/**
@@ -91,7 +76,7 @@ public class EvaluationProcessor implements LysonParserHandler {
 	 * @return the path the path of this EvaluationProcessor
 	 */
 	public String getPath() {
-		return path;
+		return context.getTargetPath();
 	}
 	
 	/**
@@ -100,12 +85,12 @@ public class EvaluationProcessor implements LysonParserHandler {
 	 * @return the processed {@link EvaluationResult}
 	 */
 	public EvaluationResult getEvaluationResult() {
-		EvaluationResult extraction = new EvaluationResult(path, path, this.builder.toString());
-		if(isWildcard) {
+		EvaluationResult result = new EvaluationResult(context.getTargetPath(), context.getCurrentPath(), this.context.getCollected());
+		if(context.isWildcard()) {
 			this.complete = false;
-			this.builder = new StringBuilder();
+			this.context.reset();
 		}
-		return extraction;
+		return result;
 	}
 	
 	@Override
@@ -117,35 +102,9 @@ public class EvaluationProcessor implements LysonParserHandler {
 		if(this.complete)
 			return false;
 		
-		String formatedPath = event.getPath();			
-		if(event.getPath().startsWith("/"))
-			formatedPath = formatedPath.substring(1);
-		if(event.getPath().endsWith("/") && event.getPath().length() > 1)
-			formatedPath = formatedPath.substring(0,formatedPath.length()-1);
+		int compliance = this.context.getComplianceLevel(event);
 		
-		String[] _pathElements = null;
-		int length = 0;
-		
-		if(formatedPath.length() > 0) {
-			_pathElements = formatedPath.split("/");
-			length = (_pathElements.length < this.pathElements.length)
-				?_pathElements.length:this.pathElements.length;		
-		} else {
-			_pathElements = new String[0];
-			length = 0;
-		}
-		
-		int i = 0;			
-		for(;i < length ;) {
-			String pathElement = this.pathElements[i];
-			String _pathElement = _pathElements[i];
-			if(EvaluationHandler.WILDCARD.equals(pathElement) || _pathElement.equals(pathElement)){
-				i+=1;
-				continue;
-			}
-			break;
-		}
-		if(i == length && length == this.pathElements.length) {
+		if(compliance > 0){
 			
 			boolean opening = false;
 			boolean closing = false;
@@ -154,27 +113,27 @@ public class EvaluationProcessor implements LysonParserHandler {
 				case ParsingEvent.JSON_ARRAY_OPENING:
 					opening = true;
 					int pos = 0;
-					Nested nested = nesteds.peek();
+					Nested nested = this.context.getNested();
 					if(nested!=null) {
 						pos = nested.inc();
-						if(pos > 0 && builder.length() > 0)
-							this.builder.append(",");
+						if(pos > 0 && this.context.getCollectedLength() > 0)
+							this.context.collect(",");
 						if(nested.jsonEntity().equals(JsonEntity.OBJECT)) {
 							KeyValueEventWrapper vwrapper = event.adapt(KeyValueEventWrapper.class);
-							this.builder.append("\"");
-							this.builder.append(vwrapper.getKey());
-							this.builder.append("\":");							
+							this.context.collect("\"");
+							this.context.collect(vwrapper.getKey());
+							this.context.collect("\":");							
 						}
 					}
-					this.builder.append("[");
-					this.nesteds.push(new Nested(JsonEntity.ARRAY,pos));
+					this.context.collect("[");
+					this.context.addNested(JsonEntity.ARRAY);
 					break;
 				case ParsingEvent.JSON_ARRAY_ITEM:
-					nested = nesteds.peek();
+					nested = this.context.getNested();
 					if(nested!=null) {
 						pos = nested.inc();
-						if(pos > 0 && builder.length() > 0)
-							this.builder.append(",");
+						if(pos > 0 && this.context.getCollectedLength() > 0)
+							this.context.collect(",");
 					}
 					ValuableEventWrapper vwrapper = event.adapt(ValuableEventWrapper.class);
 					Object eventValue = vwrapper==null?null:vwrapper.getValue();
@@ -183,43 +142,43 @@ public class EvaluationProcessor implements LysonParserHandler {
 						value = String.format("\"%s\"", ((String)eventValue).replace("\"", "\\\""));
 					else
 						value = String.valueOf(eventValue);
-					this.builder.append(value);
+					this.context.collect(value);
 					break;
 				case ParsingEvent.JSON_ARRAY_CLOSING:
 					closing = true;
-					this.builder.append("]");
-					this.nesteds.pop();
+					this.context.collect("]");
+					this.context.removeNested();
 					break;
 				case ParsingEvent.JSON_OBJECT_OPENING:
 					opening = true;
-					nested = nesteds.peek();
+					nested = this.context.getNested();
 					pos = 0;
 					if(nested!=null) {
 						KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
 						pos = nested.inc();
-						if(pos > 0 && builder.length() > 0)
-							this.builder.append(",");						
+						if(pos > 0 && this.context.getCollectedLength() > 0)
+							this.context.collect(",");						
 						if(nested.jsonEntity().equals(JsonEntity.OBJECT)) {
-							this.builder.append("\"");
-							this.builder.append(kvwrapper.getKey());
-							this.builder.append("\":");
+							this.context.collect("\"");
+							this.context.collect(kvwrapper.getKey());
+							this.context.collect("\":");
 						}
 					}					
-					this.builder.append("{");
-					this.nesteds.push(new Nested(JsonEntity.OBJECT,pos));
+					this.context.collect("{");
+					this.context.addNested(JsonEntity.OBJECT);
 					break;
 				case ParsingEvent.JSON_OBJECT_ITEM:
-					nested = nesteds.peek();
+					nested = this.context.getNested();
 					pos = 0;
 					if(nested!=null) {
 						pos = nested.inc();
-						if(pos > 0  && builder.length() > 0)
-							this.builder.append(",");
+						if(pos > 0  && this.context.getCollectedLength() > 0)
+							this.context.collect(",");
 						KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
-						this.builder.append("\"");
-						this.builder.append(kvwrapper.getKey());
-						this.builder.append("\"");
-						this.builder.append(":");
+						this.context.collect("\"");
+						this.context.collect(kvwrapper.getKey());
+						this.context.collect("\"");
+						this.context.collect(":");
 					}
 					KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
 					eventValue = kvwrapper==null?null:kvwrapper.getValue();
@@ -227,18 +186,18 @@ public class EvaluationProcessor implements LysonParserHandler {
 						value = String.format("\"%s\"", ((String)eventValue).replace("\"", "\\\""));
 					else
 						value = String.valueOf(eventValue);
-					this.builder.append(value);
+					this.context.collect(value);
 					break;
 				case ParsingEvent.JSON_OBJECT_CLOSING:
 					closing = true;
-					this.builder.append("}");
-					this.nesteds.pop();
+					this.context.collect("}");
+					this.context.removeNested();
 					break;
 				default:
 					break;
 			}
-			if(this.builder.length() > 0 && this.pathElements.length == _pathElements.length &&  
-			  (closing || (isWildcard && !opening) || (!isWildcard && !opening && !closing)))
+			if(this.context.getCollectedLength() > 0 && compliance > 1 &&  
+			  (closing || (context.isWildcard() && !opening) || (!context.isWildcard() && !opening && !closing)))
 					this.complete = true;
 		}
 		return true;
