@@ -242,4 +242,19 @@ public class TestEvaluation {
 		expression.verify(context);		
 		assertTrue(expression.verified(ValidationTime.LATELY));
 	}
+
+	@Test
+	public void testExpressionWithOneVerifiableAndNOTLogicalOperator() {
+		Verifiable verifiable = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiable.verified(Mockito.eq(ValidationTime.EARLY))).thenReturn(true);
+		Mockito.when(verifiable.verified(Mockito.eq(ValidationTime.LATELY))).thenReturn(false);
+		
+		EvaluationContext context = Mockito.mock(EvaluationContext.class);		
+		
+		Expression expression = new Expression(LogicalOperator.NOT);
+		expression.addVerifiable(verifiable);		
+		assertFalse(expression.verified(ValidationTime.EARLY));		
+		expression.verify(context);		
+		assertTrue(expression.verified(ValidationTime.LATELY));
+	}
 }
