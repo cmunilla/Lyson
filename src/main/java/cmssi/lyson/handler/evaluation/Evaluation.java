@@ -53,7 +53,7 @@ public class Evaluation implements Verifiable {
 		String formatedPath = path;
 		if(path.startsWith("/"))
 			formatedPath = formatedPath.substring(1);
-		if(path.endsWith("/"))
+		if(path.endsWith("/") && path.length() > 1)
 			formatedPath = formatedPath.substring(0,formatedPath.length()-1);
 		this.path = formatedPath;
 	}

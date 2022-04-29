@@ -35,57 +35,49 @@ import cmssi.lyson.event.ParsingEvent;
  * @version 0.6
  */
 public class EvaluationContext {
+
+	public static final int NO_MATCH = 0;
+	public static final int PARTIAL_MATCHING = 1;
+	public static final int COMPLETE_MATCHING = 2;
 	
 	private Deque<Nested> nesteds;
 	private StringBuilder builder;
 
-	private String currentPath;
+	private String matchingPath;
 	
 	private final String target;
 	private String[] targetElements;
 	
 	private final boolean wildcard;
-	
+		
 	/**
 	 * Constructor
 	 * 
 	 * Instantiates a new EvaluationContext
 	 * 
-	 * @param target
+	 * @param evaluation
 	 */
-	public EvaluationContext(String target) {
-		String formatedTarget = target;
-		if(target.startsWith("/"))
-			formatedTarget = formatedTarget.substring(1);
-		if(target.endsWith("/"))
-			formatedTarget = formatedTarget.substring(0,formatedTarget.length()-1);
-		this.target = formatedTarget;
-
+	public EvaluationContext(Evaluation evaluation) {
+		this.target = evaluation.getPath();
 		this.targetElements = this.target.split("/");
 		this.wildcard  = EvaluationHandler.WILDCARD.equals(this.targetElements[this.targetElements.length-1]);
 		this.builder = new StringBuilder();
 		this.nesteds = new LinkedList<>();
 	}
 
-	/**
-	 * @return the currentPath
-	 */
-	public String getCurrentPath() {
-		return currentPath;
-	}
-
-	/**
-	 * @param currentPath the currentPath to set
-	 */
-	public void setCurrentPath(String currentPath) {
-		this.currentPath = currentPath;
-	}
 	
 	/**
 	 * @return the String target path of this EvaluationContext
 	 */
 	public String getTargetPath() {
 		return this.target;
+	}
+	
+	/**
+	 * @return the currentPath
+	 */
+	public String getMatchingPath() {
+		return matchingPath;
 	}
 
 	/**
@@ -128,26 +120,18 @@ public class EvaluationContext {
 	}
 	
 	/**
-	 * Returns the JSON formated String content of the StringBuilder of 
-	 * this EvaluationContext
+	 * Returns the JSON formated String collected by this EvaluationContext
 	 * 
 	 * @return this EvaluationContext's JSON formated String content 
 	 */
 	public String getCollected() {
 		return this.builder.toString();
 	}
-
-	/**
-	 * @return the size of the collected String
-	 */
-	public int getCollectedLength() {
-		return this.builder.length();
-	}
 	
 	/**
-	 * Clear the StringBuilder of this EvaluationContext
+	 * Clear the JSON formated String collected by this EvaluationContext
 	 */
-	public void reset() {
+	public void clearCollected() {
 		this.builder = new StringBuilder();
 	}
 
@@ -160,6 +144,9 @@ public class EvaluationContext {
 	 * @return the integer compliance level
 	 */
 	public int getComplianceLevel(ParsingEvent event) {
+		
+		this.matchingPath = null;
+		
 		String formatedPath = event.getPath();			
 		if(event.getPath().startsWith("/"))
 			formatedPath = formatedPath.substring(1);
@@ -168,9 +155,7 @@ public class EvaluationContext {
 		
 		String[] _pathElements = null;
 		int length = 0;
-		
-		this.setCurrentPath(formatedPath);
-		
+				
 		if(formatedPath.length() > 0) {
 			_pathElements = formatedPath.split("/");
 			length = (_pathElements.length < this.targetElements.length)
@@ -190,8 +175,16 @@ public class EvaluationContext {
 			}
 			break;
 		}
-		int level =  (i == length && length == this.targetElements.length)?1:0;
-		level+=(level==1 && _pathElements.length==this.targetElements.length?1:0);
+		//if the target path and event path are equivalent (same element or wildcard target) two at two until the 
+		//last element of the smallest path the compliance level is PARTIAL_MATCHING
+		int level =  (i == length && length == this.targetElements.length)?PARTIAL_MATCHING:NO_MATCH;
+		//if the compliance level is already PARTIAL_MATCHING it becomes COMPLETE_MATCHING if both the target
+		//path and the event path are of the same length
+		level+=(level==PARTIAL_MATCHING && _pathElements.length==this.targetElements.length?1:0);
+		
+		if(level == COMPLETE_MATCHING)			
+			this.matchingPath = formatedPath;
+		
 		return level;
 	}
 	
@@ -200,5 +193,12 @@ public class EvaluationContext {
 	 */
 	public boolean isWildcard() {
 		return wildcard;
+	}
+	
+	/**
+	 * @return true if no data has been collected ; false otherwise
+	 */
+	public boolean empty() {
+		return this.builder.length()==0;
 	}
 }

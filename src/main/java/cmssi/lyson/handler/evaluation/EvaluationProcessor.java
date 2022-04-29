@@ -31,6 +31,7 @@ import cmssi.lyson.event.ParsingEvent;
 import cmssi.lyson.event.ValuableEventWrapper;
 import cmssi.lyson.exception.LysonParsingException;
 import cmssi.lyson.handler.LysonParserHandler;
+import cmssi.lyson.handler.evaluation.predicate.ValidationTime;
 
 
 /**
@@ -44,7 +45,9 @@ public class EvaluationProcessor implements LysonParserHandler {
 	
 	private static final Logger LOG = Logger.getLogger(EvaluationProcessor.class.getCanonicalName());
 
+	private Evaluation evaluation;
 	private EvaluationContext context;
+	
 	private boolean complete = false;
 	
 	/**
@@ -52,11 +55,12 @@ public class EvaluationProcessor implements LysonParserHandler {
 	 * 
 	 * Instantiates a new EvaluationProcessor
 	 * 
-	 * @param path the String path parameterizing the process of the 
+	 * @param path the target String path parameterizing the evaluation process of the 
 	 * EvaluationProcessor to be instantiated
 	 */
 	public EvaluationProcessor(String path){
-		this.context = new EvaluationContext(path);
+		this.evaluation = new Evaluation(path);
+		this.context = new EvaluationContext(this.evaluation);
 	}
 	
 	/**
@@ -85,10 +89,10 @@ public class EvaluationProcessor implements LysonParserHandler {
 	 * @return the processed {@link EvaluationResult}
 	 */
 	public EvaluationResult getEvaluationResult() {
-		EvaluationResult result = new EvaluationResult(context.getTargetPath(), context.getCurrentPath(), this.context.getCollected());
+		EvaluationResult result = new EvaluationResult(context.getTargetPath(), context.getMatchingPath(), this.context.getCollected());
 		if(context.isWildcard()) {
 			this.complete = false;
-			this.context.reset();
+			this.context.clearCollected();
 		}
 		return result;
 	}
@@ -116,7 +120,7 @@ public class EvaluationProcessor implements LysonParserHandler {
 					Nested nested = this.context.getNested();
 					if(nested!=null) {
 						pos = nested.inc();
-						if(pos > 0 && this.context.getCollectedLength() > 0)
+						if(pos > 0 && !this.context.empty())
 							this.context.collect(",");
 						if(nested.jsonEntity().equals(JsonEntity.OBJECT)) {
 							KeyValueEventWrapper vwrapper = event.adapt(KeyValueEventWrapper.class);
@@ -132,7 +136,7 @@ public class EvaluationProcessor implements LysonParserHandler {
 					nested = this.context.getNested();
 					if(nested!=null) {
 						pos = nested.inc();
-						if(pos > 0 && this.context.getCollectedLength() > 0)
+						if(pos > 0 && !this.context.empty())
 							this.context.collect(",");
 					}
 					ValuableEventWrapper vwrapper = event.adapt(ValuableEventWrapper.class);
@@ -156,7 +160,7 @@ public class EvaluationProcessor implements LysonParserHandler {
 					if(nested!=null) {
 						KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
 						pos = nested.inc();
-						if(pos > 0 && this.context.getCollectedLength() > 0)
+						if(pos > 0 && !this.context.empty())
 							this.context.collect(",");						
 						if(nested.jsonEntity().equals(JsonEntity.OBJECT)) {
 							this.context.collect("\"");
@@ -172,7 +176,7 @@ public class EvaluationProcessor implements LysonParserHandler {
 					pos = 0;
 					if(nested!=null) {
 						pos = nested.inc();
-						if(pos > 0  && this.context.getCollectedLength() > 0)
+						if(pos > 0  && !this.context.empty())
 							this.context.collect(",");
 						KeyValueEventWrapper kvwrapper = event.adapt(KeyValueEventWrapper.class);
 						this.context.collect("\"");
@@ -196,9 +200,11 @@ public class EvaluationProcessor implements LysonParserHandler {
 				default:
 					break;
 			}
-			if(this.context.getCollectedLength() > 0 && compliance > 1 &&  
-			  (closing || (context.isWildcard() && !opening) || (!context.isWildcard() && !opening && !closing)))
-					this.complete = true;
+			if(!this.context.empty() && compliance > EvaluationContext.PARTIAL_MATCHING &&  
+			  (closing || (context.isWildcard() && !opening) || (!context.isWildcard() && !opening && !closing))) {
+					this.evaluation.verify(context);
+					this.complete = this.evaluation.verified(ValidationTime.EARLY);
+			}
 		}
 		return true;
 	}
