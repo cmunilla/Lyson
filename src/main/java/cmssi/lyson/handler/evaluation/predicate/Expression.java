@@ -106,7 +106,7 @@ public class Expression implements Verifiable {
 			return this.verified;
 		
 		final LogicalOperator lo = this.logicalOperator==null
-				?LogicalOperator.AND:this.logicalOperator;
+				?LogicalOperator.NOP:this.logicalOperator;
 		
 		Optional<Boolean> verified = (this.verifiables==null||this.verifiables.isEmpty())?
 			Optional.of(true):this.verifiables.stream().map( 
@@ -125,7 +125,7 @@ public class Expression implements Verifiable {
 					}
 				}
 			);
-		
+
 		if(verified.isEmpty())
 			this.verified = true;
 		else 

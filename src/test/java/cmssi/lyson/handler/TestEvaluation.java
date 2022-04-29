@@ -1,6 +1,8 @@
 package cmssi.lyson.handler;
 
-import static org.junit.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -8,14 +10,25 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import cmssi.lyson.LysonParser;
 import cmssi.lyson.handler.evaluation.DefaultEvaluationCallback;
 import cmssi.lyson.handler.evaluation.EvaluationCallback;
+import cmssi.lyson.handler.evaluation.EvaluationContext;
 import cmssi.lyson.handler.evaluation.EvaluationHandler;
 import cmssi.lyson.handler.evaluation.EvaluationResult;
+import cmssi.lyson.handler.evaluation.predicate.Expression;
+import cmssi.lyson.handler.evaluation.predicate.LogicalOperator;
+import cmssi.lyson.handler.evaluation.predicate.ValidationTime;
+import cmssi.lyson.handler.evaluation.predicate.Verifiable;
 
 public class TestEvaluation {
+	
+	@Mock
+	Verifiable verifiable;
+	
 	
 	@Test
 	public void testJsonObjectEvaluationWithCallback() {
@@ -137,5 +150,96 @@ public class TestEvaluation {
 			assert(expected.remove(result));
 		});
 		assertTrue(expected.isEmpty());	
+	}
+	
+
+	@Test
+	public void testEmptyExpression() {
+		Expression expression = new Expression(LogicalOperator.NOP);
+		assertTrue(expression.verified(ValidationTime.EARLY));		
+		assertTrue(expression.verified(ValidationTime.LATELY));
+	}
+	
+	@Test
+	public void testExpressionWithOneVerifiable() {
+		Verifiable verifiable = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiable.verified(Mockito.eq(ValidationTime.EARLY))).thenReturn(true);
+		Mockito.when(verifiable.verified(Mockito.eq(ValidationTime.LATELY))).thenReturn(false);
+		
+		EvaluationContext context = Mockito.mock(EvaluationContext.class);		
+		
+		Expression expression = new Expression(LogicalOperator.NOP);
+		expression.addVerifiable(verifiable);		
+		assertTrue(expression.verified(ValidationTime.EARLY));		
+		expression.verify(context);		
+		assertFalse(expression.verified(ValidationTime.LATELY));
+	}
+
+	@Test
+	public void testExpressionWithOneVerifiableAndNullLogicalOperator() {
+		Verifiable verifiable = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiable.verified(Mockito.eq(ValidationTime.EARLY))).thenReturn(true);
+		Mockito.when(verifiable.verified(Mockito.eq(ValidationTime.LATELY))).thenReturn(false);
+		
+		EvaluationContext context = Mockito.mock(EvaluationContext.class);		
+		
+		Expression expression = new Expression(null);
+		expression.addVerifiable(verifiable);		
+		assertTrue(expression.verified(ValidationTime.EARLY));		
+		expression.verify(context);		
+		assertFalse(expression.verified(ValidationTime.LATELY));
+	}
+	
+
+	@Test
+	public void testExpressionWithTwoVerifiablesAndANDLogicalOperator() {
+		Verifiable verifiableOne = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiableOne.verified(Mockito.eq(ValidationTime.EARLY))).thenReturn(true);
+		Mockito.when(verifiableOne.verified(Mockito.eq(ValidationTime.LATELY))).thenReturn(false);
+
+		Verifiable verifiableTwo = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiableTwo.verified(Mockito.any(ValidationTime.class))).thenReturn(true);
+		
+		EvaluationContext context = Mockito.mock(EvaluationContext.class);		
+		
+		Expression expression = new Expression(LogicalOperator.AND, Arrays.asList(verifiableOne,verifiableTwo));
+		assertTrue(expression.verified(ValidationTime.EARLY));		
+		expression.verify(context);		
+		assertFalse(expression.verified(ValidationTime.LATELY));
+	}
+
+
+	@Test
+	public void testExpressionWithTwoVerifiablesAndORLogicalOperator() {
+		Verifiable verifiableOne = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiableOne.verified(Mockito.eq(ValidationTime.EARLY))).thenReturn(true);
+		Mockito.when(verifiableOne.verified(Mockito.eq(ValidationTime.LATELY))).thenReturn(false);
+
+		Verifiable verifiableTwo = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiableTwo.verified(Mockito.any(ValidationTime.class))).thenReturn(true);
+		
+		EvaluationContext context = Mockito.mock(EvaluationContext.class);		
+		
+		Expression expression = new Expression(LogicalOperator.OR, Arrays.asList(verifiableOne,verifiableTwo));
+		assertTrue(expression.verified(ValidationTime.EARLY));		
+		expression.verify(context);		
+		assertTrue(expression.verified(ValidationTime.LATELY));
+	}
+	
+	@Test
+	public void testExpressionWithTwoVerifiablesAndXORLogicalOperator() {
+		Verifiable verifiableOne = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiableOne.verified(Mockito.eq(ValidationTime.EARLY))).thenReturn(true);
+		Mockito.when(verifiableOne.verified(Mockito.eq(ValidationTime.LATELY))).thenReturn(false);
+
+		Verifiable verifiableTwo = Mockito.mock(Verifiable.class);	
+		Mockito.when(verifiableTwo.verified(Mockito.any(ValidationTime.class))).thenReturn(true);
+		
+		EvaluationContext context = Mockito.mock(EvaluationContext.class);		
+		
+		Expression expression = new Expression(LogicalOperator.XOR, Arrays.asList(verifiableOne,verifiableTwo));
+		assertFalse(expression.verified(ValidationTime.EARLY));		
+		expression.verify(context);		
+		assertTrue(expression.verified(ValidationTime.LATELY));
 	}
 }
