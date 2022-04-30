@@ -25,11 +25,7 @@ import cmssi.lyson.handler.evaluation.predicate.ValidationTime;
 import cmssi.lyson.handler.evaluation.predicate.Verifiable;
 
 public class TestEvaluation {
-	
-	@Mock
-	Verifiable verifiable;
-	
-	
+		
 	@Test
 	public void testJsonObjectEvaluationWithCallback() {
 		
@@ -188,8 +184,7 @@ public class TestEvaluation {
 		assertTrue(expression.verified(ValidationTime.EARLY));		
 		expression.verify(context);		
 		assertFalse(expression.verified(ValidationTime.LATELY));
-	}
-	
+	}	
 
 	@Test
 	public void testExpressionWithTwoVerifiablesAndANDLogicalOperator() {
@@ -207,7 +202,6 @@ public class TestEvaluation {
 		expression.verify(context);		
 		assertFalse(expression.verified(ValidationTime.LATELY));
 	}
-
 
 	@Test
 	public void testExpressionWithTwoVerifiablesAndORLogicalOperator() {

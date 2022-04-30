@@ -57,6 +57,7 @@ public class MappingHandler implements LysonParserHandler {
 
 	private static final Logger LOG = Logger.getLogger(MappingHandler.class.getName());
 
+	public static final String IDENTITY_MAPPING_KEY = "identity"; 
 	//keep intermediate data structure while parsing
 	private Deque<Object> stack = new LinkedList<>();
 	private MappingBuffer buffer;
@@ -314,9 +315,9 @@ public class MappingHandler implements LysonParserHandler {
 			MappingConfiguration config = ((MappingHandler)obj).getMappingBuffer().getMappingConfiguration();
 			if(config.getMappingBuilder().isSimpleCollection()) {
 				if (current instanceof Dictionary)
-					((Dictionary)current).put("identity", identity);
+					((Dictionary)current).put(IDENTITY_MAPPING_KEY, identity);
 				else if (current instanceof Map)
-					((Map)current).put("identity", identity);
+					((Map)current).put(IDENTITY_MAPPING_KEY, identity);
 			} else {			
 				AccessibleObject ao = config.getMapping(MappingConfiguration.IDENTITY_MAPPING);
 				if(ao == null) 
@@ -337,9 +338,9 @@ public class MappingHandler implements LysonParserHandler {
 			}
 		} 
 		if (obj instanceof Dictionary)
-			((Dictionary)obj).put("identity", identity);
+			((Dictionary)obj).put(IDENTITY_MAPPING_KEY, identity);
 		else if (obj instanceof Map)
-			((Map)obj).put("identity", identity);
+			((Map)obj).put(IDENTITY_MAPPING_KEY, identity);
 	}
 	
 	//Assigns the Field value of the current mapped type object by the way of the specified 

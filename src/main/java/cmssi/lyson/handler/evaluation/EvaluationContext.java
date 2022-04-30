@@ -55,7 +55,8 @@ public class EvaluationContext {
 	 * 
 	 * Instantiates a new EvaluationContext
 	 * 
-	 * @param evaluation
+	 * @param evaluation the {@link Evaluation} on which to base the EvaluationContext 
+	 * to be instantiated
 	 */
 	public EvaluationContext(Evaluation evaluation) {
 		this.target = evaluation.getPath();
@@ -67,14 +68,18 @@ public class EvaluationContext {
 
 	
 	/**
-	 * @return the String target path of this EvaluationContext
+	 * Returns the String target path of this EvaluationContext
+	 * 
+	 * @return this EvaluationContext's target String path
 	 */
 	public String getTargetPath() {
 		return this.target;
 	}
 	
 	/**
-	 * @return the currentPath
+	 * Returns the String path of a matching {@link ParsingEvent} if any; returns null otherwise
+	 *  
+	 * @return the String path of a matching {@link ParsingEvent}; null otherwise
 	 */
 	public String getMatchingPath() {
 		return matchingPath;
